@@ -1,10 +1,10 @@
+#include "DPQpkg.h" // before stdio (for MINGW_...)
+
 #include <stdlib.h> // for NULL
 #include <R.h>
 #include <Rinternals.h>
 
 #include <R_ext/Rdynload.h>
-
-#include "DPQpkg.h"
 
 #define CDEF(name)  {#name, (DL_FUNC) &name, sizeof(name ## _t)/sizeof(name ## _t[0]), name ##_t}
 #define CALLDEF(name, n)  {#name, (DL_FUNC) &name, n}
@@ -24,7 +24,7 @@ static R_NativePrimitiveArgType Pnchisq_it_t[] = {
     /* terms, prob : */ REALSXP, REALSXP };
 static R_NativePrimitiveArgType ncbeta_t[] = {
     REALSXP, REALSXP, REALSXP, REALSXP,
-    /* n: */ INTSXP,
+    /* n: */ INTSXP, LGLSXP,
     /* errmax: */ REALSXP, INTSXP, INTSXP,
     /* res: */ REALSXP };
 
@@ -47,7 +47,8 @@ static const R_CMethodDef CEntries[] = {
 
 static R_CallMethodDef CallEntries[] = {
     CALLDEF(R_algdiv,   2), // <-- ./algdiv.c
-    CALLDEF(ppoisD,     3), // <-- ./ppois-direct.c
+    CALLDEF(chk_LDouble,3), // <-- ./ppois-direct.c
+    CALLDEF(ppoisD,     4), // <-- ./ppois-direct.c
     CALLDEF(Pnchisq_R, 14), // <-- ./pnchisq-it.c
 
     {NULL, NULL, 0}

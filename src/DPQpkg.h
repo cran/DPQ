@@ -1,4 +1,8 @@
 
+# ifdef _WIN32
+#   define __USE_MINGW_ANSI_STDIO 1
+# endif
+
 #include <Rmath.h>
 // for F77_NAME() :
 #include <R_ext/RS.h>
@@ -83,11 +87,23 @@
 // --------- MM_R end_of { #include <nmath.h> substitute } ----------------------
 
 
-/* R's  #include <config.h> typically defines this (it may be very on Solaris):
+/* R's  #include <config.h> typically defines this
+ *                          (it may be very slow on Solaris):
  *
- * Define if you wish to use the 'long double' type. */
+ * Define if you wish to use the 'long double' type.
+ */
 #define HAVE_LONG_DOUBLE 1
-
+/* no longer needed :------
+#ifndef _WIN32
+#define HAVE_LONG_DOUBLE 1
+#else // Windows:
+#  ifdef _WIN64
+#    define HAVE_LONG_DOUBLE 1
+#  else // Windows 32 bit
+#    define HAVE_LONG_DOUBLE 1
+#  endif
+#endif
+*/
 
 /* Required by C99, but might be slow */
 #ifdef HAVE_LONG_DOUBLE
@@ -104,13 +120,21 @@
 # define LOG1p log1pl
 // Rmpfr: log(mpfr(2, 130)) {130 bits is "more than enough": most long_double are just 80 bits!}
 # define M_LN2_ 0.6931471805599453094172321214581765680755L
-#else
+# define PR_g_ "Lg"
+# ifdef _WIN32 // all of Windows (such that "%Lg" works)
+#   define __USE_MINGW_ANSI_STDIO 1
+# endif
+
+#else //--------------------
+
 # define EXP exp
 # define EXPm1 expm1
 # define FABS fabs
 # define LOG log
 # define LOG1p log1p
 # define M_LN2_ M_LN2
+# define PR_g_ "g"
+
 #endif
 
 
@@ -150,12 +174,15 @@ SEXP Pnchisq_R(SEXP x_, SEXP f_, SEXP theta_,
 // 310-pnbeta.c : --------------------------------------------------------------
 
 void ncbeta(double *a, double *b, double *lambda, double *x, int *n,
+	    int *use_AS226,
 	    double *errmax, int *itrmax, int *ifault, double *res)
     ;
 
 // ppois-direct.c : ------------------------------------------------------------
 
-SEXP ppoisD(SEXP X, SEXP lambda_, SEXP all_from_0_)
+SEXP chk_LDouble(SEXP lambda_, SEXP verbose_, SEXP tol_)
+    ;
+SEXP ppoisD(SEXP X, SEXP lambda_, SEXP all_from_0_, SEXP verbose_)
     ;
 
 // wienergerm_nchisq.c : -------------------------------------------------------

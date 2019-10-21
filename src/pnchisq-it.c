@@ -3,9 +3,9 @@
  *  positive real degrees of freedom f and nonnegative noncentrality
  *  parameter theta
  */
-#include <float.h> // for DBL_*
+#include "DPQpkg.h" // before stdio (for MINGW_...)
 
-#include "DPQpkg.h"
+#include <float.h> // for DBL_*
 
 /* --> below:  Pnchisq_it()  called from R
  *             ------------
@@ -175,6 +175,8 @@ double pnchisq_it(double x, double f, double theta,
     return (ans);
 }
 
+/** Called from R's pnchisqIT()   as  .C(C_Pnchisq_it, ...)  --->> ../R/pnchisq.R
+ */
 // TODO: vectorize in x
 void Pnchisq_it(double *x, double *f, double *theta,
 		double *errmax, double *reltol, int *itrmax, int *verbose,
@@ -195,22 +197,23 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 		    double errmax, double reltol, double epsS, int itrmax, int verbose,
 		    Rboolean lower_tail, Rboolean log_p, LDOUBLE *sum, LDOUBLE *sum2);
 
+// called in a loop over x from Pnchisq_R() which is called from R's pnchisqRC() :
 double pnchisqR(double x, double df, double ncp, Rboolean lower_tail, Rboolean log_p,
 		double cutoff_ncp, Rboolean small_logspace,
 		Rboolean no_2nd_call, int it_simple,
 		double errmax, double reltol, double epsS, int itrmax, int verbose)
 		// 1e-12, 8*DBL_EPSILON, 1000000,
 {
-    double ans;
 #ifdef IEEE_754
     if (ISNAN(x) || ISNAN(df) || ISNAN(ncp))
 	return x + df + ncp;
     if (!R_FINITE(df) || !R_FINITE(ncp))
 	ML_ERR_return_NAN;
 #endif
-    LDOUBLE sum, sum2;
-
     if (df < 0. || ncp < 0.) ML_ERR_return_NAN;
+
+    LDOUBLE sum, sum2;
+    double ans;
     ans = pnchisq_rawR(x, df, ncp, cutoff_ncp, small_logspace, it_simple,
 		       errmax, reltol, epsS, itrmax,
 		       verbose, lower_tail, log_p, &sum, &sum2);
@@ -256,10 +259,10 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 		    double errmax, double reltol, double epsS, int itrmax, int verbose,
 		    Rboolean lower_tail, Rboolean log_p, LDOUBLE *sum, LDOUBLE *sum2)
 {
-    double lam, x2, f2, term, bound, f_x_2n, f_2n;
+    double lam, x2, f2, term, bound = -1., f_x_2n, f_2n;
     double l_lam = -1., l_x = -1.; /* initialized for -Wall */
     int n;
-    Rboolean lamSml, tSml, is_r, is_b, is_it;
+    Rboolean lamSml, tSml, is_r, is_b;
     LDOUBLE ans, u, v, t, lt, lu =-1;
 
     if (x <= 0.) {
@@ -277,7 +280,6 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 
     // cutoff_ncp was '80' hardcoded  //  it_simple was '110' hardcoded
     if(theta < cutoff_ncp) { /* use 110 for Inf, as ppois(110, 80/2, lower.tail=FALSE) is 2e-20 */
- 	LDOUBLE ans;
 	int i;
 	// Have  pgamma(x,s) < x^s / Gamma(s+1) (< and ~= for small x)
 	// ==> pchisq(x, f) = pgamma(x, f/2, 2) = pgamma(x/2, f/2)
@@ -300,13 +302,15 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 	    for(i = 0; i < it_simple;  pr += log_lam - log(++i)) {
 		*sum2 = (LDOUBLE) logspace_add(*sum2, pr);
 		*sum  = (LDOUBLE) logspace_add(*sum , pr + pchisq(x, f+2*i, lower_tail, TRUE));
-		if(verbose >= 2) REprintf(" %d: %g;", i, *sum2);
+		if(verbose >= 2)
+		    REprintf(" %d: %" PR_g_ ";", i, *sum2);
 		if (*sum2 >= -epsS) /*<=> EXP(sum2) >= 1-epsS */ break;
 	    }
 	    ans = *sum - *sum2;
 	    if(verbose >= 2) REprintf(" final i=%d\n", i);
 	    if(verbose)
-		REprintf("pnchisq(x=%g, f=%g, th.=%g); th. < cutoff_ncp=%g, logspace: i=%d, ans=(sum=%g)-(sum2=%g)\n",
+		REprintf("pnchisq(x=%g, f=%g, th.=%g); th. < cutoff_ncp=%g, logspace: i=%d,"
+			 " ans=(sum=%" PR_g_ ")-(sum2=%" PR_g_ ")\n",
 			 x,f,theta, cutoff_ncp, i, *sum, *sum2);
 	    if (i >= it_simple)
 		MATHLIB_WARNING2(_("pnchisq(x=%g, ..): I: not converged in %d simple iterations"),
@@ -325,14 +329,15 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 		// pchisq(*, i, *) is  strictly decreasing to 0 for lower_tail=TRUE
 		//                 and strictly increasing to 1 for lower_tail=FALSE
 		*sum += pr * pchisq(x, f+2*i, lower_tail, FALSE);
-		if(verbose >= 2) REprintf(" %d, %g;", i, *sum2);
+		if(verbose >= 2) REprintf(" %d, %" PR_g_ ";", i, *sum2);
 		if (*sum2 >= 1-epsS) break;
 	    }
 	    if(verbose >= 2) REprintf(" final i=%d\n", i);
 	    ans = *sum / *sum2;
 	    if(verbose)
-		REprintf("pnchisq(x=%g, f=%g, theta=%g); theta < cutoff_ncp=%g: i=%d, ans=(sum=%g)/(sum2=%g)\n",
-			 x,f,theta, cutoff_ncp, i, (double)*sum, (double)*sum2);
+		REprintf("pnchisq(x=%g, f=%g, theta=%g); theta < cutoff_ncp=%g: i=%d, "
+			 "ans=(sum=%" PR_g_ ")/(sum2=%" PR_g_ ")\n",
+			 x,f,theta, cutoff_ncp, i, *sum, *sum2);
 	    if (i >= it_simple)
 		MATHLIB_WARNING2(_("pnchisq(x=%g, ..): II: not converged in %d simple iterations"),
 				 x, it_simple);
@@ -367,7 +372,7 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
     f_x_2n = f - x;
 
     if(verbose)
-	REprintf("-- v=exp(-th/2)=%g, x/2= %g, f/2= %g\n",v,x2,f2);
+	REprintf("-- v=exp(-th/2)=%" PR_g_ ", x/2= %g, f/2= %g\n",v,x2,f2);
 
 
     if(f2 * DBL_EPSILON > 0.125 && /* very large f and x ~= f: probably needs */
@@ -376,18 +381,14 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 	/* evade cancellation error */
 	/* t = exp((1 - t)*(2 - t/(f2 + 1))) / sqrt(2*M_PI*(f2 + 1));*/
         lt = (1 - t)*(2 - t/(f2 + 1)) - M_LN_SQRT_2PI - 0.5 * log(f2 + 1);
-    if(verbose)
-	REprintf(" (case I) ==> ");
-
+	if(verbose)
+	    REprintf(" (case I) ==> ");
     }
     else {
 	/* Usual case 2: careful not to overflow .. : */
 	lt = f2*log(x2) -x2 - lgammafn(f2 + 1);
     }
-    if(verbose)
-	REprintf(" lt= %g", lt);
-
-
+    if(verbose) REprintf(" lt= %" PR_g_ "", lt);
     tSml = (lt < _dbl_min_exp);
     if(tSml) {
 	if(verbose)
@@ -403,7 +404,7 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
     else {
 	t = EXP(lt);
 	if(verbose)
-	    REprintf(", t=exp(lt)= %g\n", t);
+	    REprintf(", t=exp(lt)= %" PR_g_ "\n", t);
 	ans = term = (double) (v * t);
     }
 
@@ -425,7 +426,7 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 
 	    bound = (double) (t * x / f_x_2n);
 	    if(verbose >= 2 && n % 1000 == 0)
-		REprintf("\n L10: n=%d; term, ans = %g, %g; bound= %g",
+		REprintf("\n L10: n=%d; term, ans = %g, %" PR_g_ "; bound= %g",
 			 n, term, ans, bound);
 	    is_r = FALSE;
 	    /* convergence only if BOTH absolute and relative error < 'bnd' */
@@ -436,7 +437,7 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 		    REprintf("BREAK out of for(n = 1 ..): n=%d; bound= %g %s; term=%g, rel.err= %g %s\n",
 			     n,
 			     bound, (is_b ? "<= errmax" : ""), term,
-			     term/ans, (is_r ? "<= reltol" : ""));
+			     (double)(term/ans), (is_r ? "<= reltol" : ""));
 		break; /* out completely */
             }
 
@@ -482,17 +483,24 @@ double pnchisq_rawR(double x, double f, double theta /* = ncp */,
 	MATHLIB_WARNING4(_("pnchisq(x=%g, f=%g, theta=%g, ..): not converged in %d iter."),
 			 x, f, theta, itrmax);
     }
-    if(verbose)
-	REprintf("\n == L_End: n=%d; term= %g; bound=%g: ans=%Lg\n",
-		 n, term, bound, ans);
-
     double dans = (double) ans;
+    if(verbose)
+	// workaround MinGW Windows bug
+#ifdef _WIN32
+	REprintf("\n == L_End: n=%d; term= %g; bound=%g: [dbl]ans=%g\n",
+		 n, term, bound, dans);
+#else // working printf(<long double)
+	REprintf("\n == L_End: n=%d; term= %g; bound=%g: ans=%" PR_g_ "\n",
+		 n, term, bound, ans);
+#endif
     return R_DT_val(dans);
 }
 
 
-/* called from ../R/pnchisq.R : {with slightly different name conventions:
-
+/** Called from R's pnchisqRC()   as  .Call(C_R_Pnchisq_R, ...)  --->> ../R/pnchisq.R <<
+ *
+ * with slightly different name conventions:
+ *
  *                        Name in R */
 SEXP Pnchisq_R(SEXP x_, //	  q
 	       SEXP f_, //	 df

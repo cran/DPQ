@@ -4,6 +4,50 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.3-5 (2019-10-18, svn r131)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{pnbetaAS310()} gained a \code{useAS226} option.
+
+      \item New \code{okLongDouble()} function, notably for detecting that
+      with a \command{valgrind}ed version of \R, \code{long double} C
+      arithmetic seems to silently switch to (simple) \code{double} precision.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item long double printing from C now should happen correctly on all
+      platforms including 32- and 64-bit Windows.
+    }
+  }
+}
+
+\section{Version 0.3-4 (2019-10-16, svn r125)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item more efficient (internally vectorized) \code{dntJKBf()}.
+      Consequently, \code{dntJKBf1()} is deprecated now.
+
+      \item \code{pntR()} (and \code{pntR1()}) get new option
+      \code{use.pnorm} (the default of which had been hard coded previously).
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item fix thinko in \code{any_mpfr()} and \code{all_mpfr()}.
+
+      \item \code{pnchisqRC()}'s C code gave severe valgrind warnings;
+      fixed printing of \code{long double} etc;
+      also added special MinGW deal in Windows.
+
+      \item \code{ppoisD()} behaves differently in a valgrinded version;
+      for now, reproducible only when using valgrind on non-valgrinded
+      installed package.
+    }
+  }
+}
+
+
 \section{Version 0.3-3 (2019-09-24, svn r110)}{
   \subsection{NEW FEATURES}{
     \itemize{

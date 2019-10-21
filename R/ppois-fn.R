@@ -1,4 +1,11 @@
-ppoisD <- function(q, lambda, all.from.0 = TRUE)
+okLongDouble <- function(lambda = 999, verbose = 0L, tol = 1e-15)
+{
+    ## Author: Martin Maechler, Oct 17, 2019
+    stopifnot(length(lambda) == 1L, length(verbose) == 1L, length(tol) == 1L)
+    .Call(C_chk_LDouble, lambda, verbose, tol) # -> ../src/ppois-direct.c
+}
+
+ppoisD <- function(q, lambda, all.from.0 = TRUE, verbose = 0L)
 {
   ## Purpose: ppois() via direct computation ("sum(dpois)"
   ## ----------------------------------------------------------------------
@@ -6,7 +13,7 @@ ppoisD <- function(q, lambda, all.from.0 = TRUE)
   ## ----------------------------------------------------------------------
   ## Author: Martin Maechler, Date:  2 Mar 2004; .C -> .Call(): 2019-08-15
     if(all.from.0) stopifnot(length(q) == 1L)
-    .Call(C_ppoisD, as.double(q), lambda, all.from.0)
+    .Call(C_ppoisD, as.double(q), lambda, all.from.0, verbose) # -> ../src/ppois-direct.c
 }
 
 

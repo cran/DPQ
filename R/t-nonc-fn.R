@@ -230,7 +230,7 @@ c_pt <- function(nu)
 }
 
 
-## MM:  My conclusion of experiments in ../tests/pnt-precision-problem.R :
+## MM:  My conclusion of experiments in ../tests/pnt-prec.R :
 ## -------              --------------------------
 ## Large t (>0 or < 0)  *MUST* get a new algorithm !
 ## -------              --------------------------
@@ -461,16 +461,17 @@ pnt3150.1 <- function(t, df, ncp, lower.tail = TRUE, log.p = FALSE, M = 1000,
             stopifnot(requireNamespace("Rmpfr"))
             ## if(!exists("pbetaRv1", mode="function"))
             ##     source("~/R/MM/NUMERICS/dpq-functions/beta-gamma-etc/pbetaR.R")
-            getPrec <- Rmpfr::getPrec
-            prec <- max(getPrec(t), getPrec(df), getPrec(ncp))
             pbeta <- Vectorize(pbetaRv1, "shape2") # so pbeta(x, p, <vector q>) works
-            if(FALSE) {
-                pi <- Rmpfr::Const("pi", prec = max(64, prec))
-                dbeta <- function(x, a,b, log=FALSE) {
-                    lval <- (a-1)*log(x) + (b-1)*log1p(-x) - lbeta(a, b)
-                    if(log) lval else exp(lval)
-                }
-            }
+
+            ## TODO ???? as with pntP94.1() below ???? <<<<<<<<<<<<<<<< ???
+            ## ---------
+            ## getPrec <- Rmpfr::getPrec
+            ## prec <- max(getPrec(t), getPrec(df), getPrec(ncp))
+            ## pi <- Rmpfr::Const("pi", prec = max(64, prec))
+            ## dbeta <- function(x, a,b, log=FALSE) {
+            ##     lval <- (a-1)*log(x) + (b-1)*log1p(-x) - lbeta(a, b)
+            ##     if(log) lval else exp(lval)
+            ## }
         }
     }
 

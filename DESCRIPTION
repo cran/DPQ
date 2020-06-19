@@ -1,10 +1,10 @@
 Package: DPQ
 Title: Density, Probability, Quantile ('DPQ') Computations
-Version: 0.3-5
-Date: 2019-10-18
+Version: 0.4-1
+Date: 2020-06-17
 Authors@R: c(person("Martin","Maechler", role=c("aut","cre"),
                     email="maechler@stat.math.ethz.ch", comment = c(ORCID = "0000-0002-8685-9910"))
-  , person("Morten",   "Welinder",    role = "ctb", comment = "pgamma C code, see PR#7307, Jan. 2005")
+  , person("Morten",   "Welinder",    role = "ctb", comment = "pgamma C code, see PR#7307, Jan. 2005; further pdhyper()")
   , person("Wolfgang", "Viechtbauer", role = "ctb", comment = "dtWV(), 2002")
   , person("Ross",     "Ihaka",       role = "ctb", comment = "src/qchisq_appr.c")
   , person("Marius",   "Hofert",      role = "ctb", comment = "lsum(), lssum()")
@@ -21,15 +21,16 @@ Description: Computations for approximations and alternatives for the 'DPQ'
   implementations, notably for my own use in order to improve R`s own
    pbeta(), qgamma(), ..., etc: {'"dpq"'-functions}.
   -- We plan to complement with 'DPQmpfr' to be suggested later.
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.6.0)
 Imports: stats, graphics, methods, utils, sfsmisc
-Suggests: Rmpfr, Matrix, mgcv, scatterplot3d, akima
+Suggests: Rmpfr, Matrix, MASS, mgcv, scatterplot3d, akima
 SuggestsNote: Matrix only for its "test-tools-1.R"; mgcv,scatt..,akima:
         some tests/
 License: GPL (>= 2)
 Encoding: UTF-8
 Author: Martin Maechler [aut, cre] (<https://orcid.org/0000-0002-8685-9910>),
-  Morten Welinder [ctb] (pgamma C code, see PR#7307, Jan. 2005),
+  Morten Welinder [ctb] (pgamma C code, see PR#7307, Jan. 2005; further
+    pdhyper()),
   Wolfgang Viechtbauer [ctb] (dtWV(), 2002),
   Ross Ihaka [ctb] (src/qchisq_appr.c),
   Marius Hofert [ctb] (lsum(), lssum()),
@@ -38,8 +39,8 @@ Author: Martin Maechler [aut, cre] (<https://orcid.org/0000-0002-8685-9910>),
 Maintainer: Martin Maechler <maechler@stat.math.ethz.ch>
 Repository: CRAN
 Repository/R-Forge/Project: specfun
-Repository/R-Forge/Revision: 131
-Repository/R-Forge/DateTimeStamp: 2019-10-18 13:25:37
-Date/Publication: 2019-10-21 08:00:02 UTC
+Repository/R-Forge/Revision: 146
+Repository/R-Forge/DateTimeStamp: 2020-06-19 15:47:17
+Date/Publication: 2020-06-19 23:00:05 UTC
 NeedsCompilation: yes
-Packaged: 2019-10-18 13:30:28 UTC; rforge
+Packaged: 2020-06-19 16:08:28 UTC; rforge

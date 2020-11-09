@@ -1,7 +1,7 @@
 Package: DPQ
 Title: Density, Probability, Quantile ('DPQ') Computations
-Version: 0.4-1
-Date: 2020-06-17
+Version: 0.4-2
+Date: 2020-11-08
 Authors@R: c(person("Martin","Maechler", role=c("aut","cre"),
                     email="maechler@stat.math.ethz.ch", comment = c(ORCID = "0000-0002-8685-9910"))
   , person("Morten",   "Welinder",    role = "ctb", comment = "pgamma C code, see PR#7307, Jan. 2005; further pdhyper()")
@@ -28,6 +28,8 @@ SuggestsNote: Matrix only for its "test-tools-1.R"; mgcv,scatt..,akima:
         some tests/
 License: GPL (>= 2)
 Encoding: UTF-8
+NeedsCompilation: yes
+Packaged: 2020-11-09 09:37:16 UTC; maechler
 Author: Martin Maechler [aut, cre] (<https://orcid.org/0000-0002-8685-9910>),
   Morten Welinder [ctb] (pgamma C code, see PR#7307, Jan. 2005; further
     pdhyper()),
@@ -38,9 +40,4 @@ Author: Martin Maechler [aut, cre] (<https://orcid.org/0000-0002-8685-9910>),
   R Foundation [cph] (src/qchisq-appr.c)
 Maintainer: Martin Maechler <maechler@stat.math.ethz.ch>
 Repository: CRAN
-Repository/R-Forge/Project: specfun
-Repository/R-Forge/Revision: 146
-Repository/R-Forge/DateTimeStamp: 2020-06-19 15:47:17
-Date/Publication: 2020-06-19 23:00:05 UTC
-NeedsCompilation: yes
-Packaged: 2020-06-19 16:08:28 UTC; rforge
+Date/Publication: 2020-11-09 12:30:02 UTC

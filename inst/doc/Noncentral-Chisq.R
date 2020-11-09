@@ -1,5 +1,4 @@
 ### R code from vignette source 'Noncentral-Chisq.Rnw'
-### Encoding: UTF-8
 
 ###################################################
 ### code chunk number 1: inf-loop-1 (eval = FALSE)

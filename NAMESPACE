@@ -47,6 +47,7 @@ export(
   , ".DT_Cexp", ".DT_CIv", ".DT_Clog", ".DT_Cval", ".DT_exp", ".DT_log", ".DT_Log"
   , ".DT_qIv", ".DT_val"
   , log1mexp
+  , M_SQRT2
   , M_LN2, M_cutoff, M_minExp
   , G_half
 
@@ -158,7 +159,9 @@ export(
 
   , qgammaAppr, qgammaApprSmallP, qgammaApprKG
 
+  , pnormL_LD10, pnormU_S53
   , qnormAppr, qnormUappr
+  , qnormR, qnormR1
   , qtAppr
   , r_pois, r_pois_expr
     ## no! titleR.exp (FIXME eventually: should not need such a global)

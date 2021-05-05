@@ -84,6 +84,39 @@
        MATHLIB_WARNING(msg, s); \
    } \
 }
+
+
+
+#define ML_WARN_return_NAN { ML_WARNING(ME_DOMAIN, ""); return ML_NAN; }
+
+/* For a long time prior to R 2.3.0 ML_WARNING did nothing.
+   We don't report ME_DOMAIN errors as the callers collect ML_NANs into
+   a single warning.
+ */
+#define ML_WARNING(x, s) { \
+   if(x > ME_DOMAIN) { \
+       char *msg = ""; \
+       switch(x) { \
+       case ME_DOMAIN: \
+	   msg = _("argument out of domain in '%s'\n");	\
+	   break; \
+       case ME_RANGE: \
+	   msg = _("value out of range in '%s'\n");	\
+	   break; \
+       case ME_NOCONV: \
+	   msg = _("convergence failed in '%s'\n");	\
+	   break; \
+       case ME_PRECISION: \
+	   msg = _("full precision may not have been achieved in '%s'\n"); \
+	   break; \
+       case ME_UNDERFLOW: \
+	   msg = _("underflow occurred in '%s'\n");	\
+	   break; \
+       } \
+       MATHLIB_WARNING(msg, s); \
+   } \
+}
+
 // --------- MM_R end_of { #include <nmath.h> substitute } ----------------------
 
 
@@ -209,3 +242,67 @@ double algdiv(double a, double b);
 // .Call()ed :
 SEXP R_algdiv(SEXP a_, SEXP b_)
     ;
+
+// bd0.c: --------------------------------------------------------------------
+double bd0(double x, double np, double delta, int maxit, int trace);
+void  ebd0(double x, double M, double *yh, double *yl);
+
+SEXP dpq_bd0(SEXP x, SEXP np, SEXP delta,
+	     SEXP maxit, SEXP version, SEXP trace);
+
+
+// logcf.c: --------------------------------------------------------------------
+SEXP R_logcf(SEXP x_, SEXP i_, SEXP d_, SEXP eps_, SEXP trace_);
+/*
+ */
+
+
+// lgammacor.c : -------------------------------------------------------------
+double dpq_lgammacor(double x, int nalgm, double xbig);
+SEXP     R_lgammacor(SEXP x_, SEXP nalgm_, SEXP xbig_);
+
+// chebyshev.c : -------------------------------------------------------------
+
+/* Chebyshev Polynomial */
+int	chebyshev_init(const double[], int, double);
+double	chebyshev_eval(double, const double[], const int);
+
+SEXP R_chebyshev_eval(SEXP x_, SEXP a_, SEXP n_);
+SEXP R_chebyshev_init(SEXP coef_, SEXP eta_);
+
+
+// DPQ-misc.c: --------------------------------------------------------------------
+
+// 1. Functions from R's  C API  Rmath.h  -- not (yet) existing as base R functions
+
+SEXP R_log1pmx(SEXP x_);
+/* double log1pmx (double X)
+     Computes 'log(1 + X) - X' (_log 1 plus x minus x_), accurately even
+     for small X, i.e., |x| << 1.
+*/
+
+SEXP R_log1pexp(SEXP x_);
+/* double log1pexp (double X)
+     Computes 'log(1 + exp(X))' (_log 1 plus exp_), accurately, notably
+     for large X, e.g., x > 720.
+*/
+
+SEXP R_log1mexp(SEXP x_);
+/* double log1mexp (double X)
+     Computes 'log(1 - exp(-X))' (_log 1 minus exp_), accurately,
+     carefully for two regions of X, optimally cutting off at log 2 (=
+     0.693147..), using '((-x) > -M_LN2 ? log(-expm1(-x)) :
+     log1p(-exp(-x)))'.
+*/
+
+SEXP R_lgamma1p(SEXP x_);
+/* double lgamma1p (double X)
+     Computes 'log(gamma(X + 1))' (_log(gamma(1 plus x))_), accurately
+     even for small X, i.e., 0 < x < 0.5.
+*/
+
+SEXP R_frexp(SEXP x_);
+// returns list(r = <double>, e = <integer>) where  x = r * 2^e , r in [0.5, 1) and integer e
+
+SEXP R_ldexp(SEXP f_, SEXP E_);
+// ldexp(f, E) := f * 2^E

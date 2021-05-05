@@ -4,6 +4,62 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.4-3 (2021-05-05, svn r166)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item Provide \R functions
+      \code{log1mexpC()}, \code{log1pexpC()}, \code{log1pmxC()}, and \code{lgamma1pC()},
+      all interfacing to \R's C API (\file{Rmath.h}), aka \sQuote{Rmathlib}.
+
+      \item New \code{pnormAsymp()} for asymptotic (typically upper tail,
+      log scale) approximation of \code{pnorm()}.  With \CRANpkg{Rmpfr}, we
+      can see how accurate these are in detail. % currently on  ../man/pnormAsymp.Rd
+
+      \item New \code{dnbinomR()} finding better code for \R itself,
+      \code{dnbinom.mu()} and \code{dbinom_raw()}; also new utility
+      functions \code{bd0()} and \code{stirlerr()}, both vectorized,
+      and also working with "mpfr"-numbers, such that \code{dpois_raw()}
+      now does so, too.
+
+      Additionally, an \dQuote{extended} version of \code{bd0()} called
+      \code{ebd0()} in pure \R, where a C version was proposed by Morten
+      Welinder in R's bugzilla, \PR{15628}. % However, ebd0() is *wrong* too
+
+      Experimentally, also provide \code{p1l1()} and its Taylor series
+      approximations \code{p1l1ser()} which could be employed for
+      \code{bd0()} / \code{ebd0()} instead of the current algorithms.
+
+      \item Several C level utilities to be .Call()ed from \R, from \R's
+      mathlib, \code{ldexp()} and \code{frexp()} even from C math.
+
+      \item Pure R implementations (somewhat experimental) of corresponding
+      \R Mathlib C functions: \code{qbinomR()}, \code{qnbinomR()}, and \code{qpoisR()}
+      each with several tuning parameters for the underlying algorithm,
+      notably the root-finding parts.
+
+      \item newly, \code{logcf()} now based on C code, perfectly
+      vectorizes; the pure \R version, now called \code{logcfR(x, *)}
+      currently still runs the iterations simultaneously for all `x[i]` and
+      hence convergence and rescaling happen by \dQuote{group decision},
+      efficiently but undesirable for strict comparisons.
+
+      \code{logcfR(x, *)} and \code{log1pmx(x, *)} now also work for
+      "mpfr"-numbers \code{x}, and \code{log1pmx()} gets optional
+      \code{eps2 = 1e-2} and \code{minL1 = -0.791} arguments, the defaults
+      of which \emph{may change}, as I think at least the latter to not be
+      perfect.
+
+      \item Now \code{lb_chiAsymp(nu, order)} works up to order 8.
+
+      \item Provide the first parts of a new vignette
+      (\file{../vignettes/log1pmx-etc.Rnw}) on \code{log1pmx()},
+      \code{bd0()}, and \code{stirlerr()}, which should contain part of
+      Loader(2000)'s report and new findings of improved \code{bd0()} and
+      \code{stirlerr()} computations.
+    }
+  }
+}
+
 \section{Version 0.4-2 (2020-11-07, svn r151)}{
   \subsection{NEW FEATURES}{
     \itemize{

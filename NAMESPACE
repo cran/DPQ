@@ -1,5 +1,4 @@
-useDynLib(DPQ, .registration = TRUE, .fixes = "C_")
-                                        # <--> src/init.c
+useDynLib(DPQ, .registration = TRUE, .fixes = "C_")# <--> .Call(C_<foo>, ..)
 
 ## We do *NOT* import from  Rmpfr here,
 ## as we only __suggest__ the package in ./DESCRIPTION
@@ -13,7 +12,8 @@ importFrom("sfsmisc"
 importFrom("stats"
          , dnorm, pnorm, qnorm
          , dbeta, pbeta, qbeta
-         , dbinom, pbinom
+         , dbinom, pbinom, qbinom
+         , dnbinom,pnbinom,qnbinom
          , dgamma, pgamma, qgamma
          , dchisq, pchisq, qchisq
          , df, pf, qf
@@ -26,7 +26,7 @@ importFrom("graphics",
            curve, legend, lines, par, plot
            )
 
-importFrom("methods", is, new
+importFrom("methods", as, is, new
            )
 
 importFrom("utils"
@@ -47,6 +47,7 @@ export(
   , ".DT_Cexp", ".DT_CIv", ".DT_Clog", ".DT_Cval", ".DT_exp", ".DT_log", ".DT_Log"
   , ".DT_qIv", ".DT_val"
   , log1mexp
+  , log1mexpC, log1pexpC, log1pmxC, lgamma1pC
   , M_SQRT2
   , M_LN2, M_cutoff, M_minExp
   , G_half
@@ -94,9 +95,11 @@ export(
   , okLongDouble # as with valgrind, it does not work contrary to what .Machine says
 
   , lgamma1p., lgamma1p, lgamma1p_series
+  , lgammacor
   , log1pmx
   , logQab_asy
-  , logcf, logr
+  , logcfR, logcfR., logcf
+  , logr
   , lssum, lsum
 
   , newton # R/pnchisq.R
@@ -122,13 +125,15 @@ export(
   , pntP94, pntP94.1
   , pntR, pntR1
 
-  , ppoisD
+  , ppoisD, qpoisR
 
   , qbetaAppr, qbetaAppr.1, qbetaAppr.2, qbetaAppr.3, qbetaAppr.4, qbeta.R
   , qgamma.R
 
   , dgamma.R
-  , dpois_raw, bd0, stirlerr
+  , dpois_raw
+  , bd0, bd0C, ebd0, stirlerr
+  , p1l1, p1l1., p1l1p, p1l1ser ## NB: p1l1p() via log1pmx()  is *very* good!
 
     ## from R/qchisqAppr.R :
   , qchisqAppr.R
@@ -150,6 +155,13 @@ export(
   , phyperBinMolenaar, phyperBinMolenaar.1, phyperBinMolenaar.2, phyperBinMolenaar.3, phyperBinMolenaar.4
   , phyperIbeta, phyperPeizer, phyperR, phypers
   , pdhyper, phyperR2
+    ##  from R/dbinom-nbinom.R :
+  , dbinom_raw
+  , dnbinomR, dnbinom.mu
+
+   , qbinomR  ## <- R/qbinomR.R
+   , qnbinomR ## <- R/qnbinomR.R
+   , qpoisR   ## <- R/qpoisR.R
 
     ## from R/qnchisq.R
   , qchisqAppr.0, qchisqAppr.1, qchisqAppr.2, qchisqAppr.3
@@ -160,6 +172,7 @@ export(
   , qgammaAppr, qgammaApprSmallP, qgammaApprKG
 
   , pnormL_LD10, pnormU_S53
+  , pnormAsymp
   , qnormAppr, qnormUappr
   , qnormR, qnormR1
   , qtAppr

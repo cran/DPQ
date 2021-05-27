@@ -62,7 +62,7 @@ dpois_raw <- function(x, lambda, log=FALSE,
         inds <- function(i)
             if((n <- length(i)) <= 4)
                 paste(i, collapse=", ")
-            else paste(paste(i[1:3], collapse=", "), "..")
+            else paste(paste(i[1:3], collapse=", "), "..", i[n])
     }
     verb1 <- pmax(0L, verbose - 1L)
 
@@ -172,7 +172,7 @@ bd0_p1l1d <- function(x, M, tol_logcf = 1e-14, ...) {
 bd0_l1pm <- function(x, M, tol_logcf = 1e-14, ...) {
     ## FIXME? for x = 0, hence x < eps !
     s <- (M-x)/x
-    x * log1pmx(s, tol_logcf=tol_logcf, ...)
+    - x * log1pmx(s, tol_logcf=tol_logcf, ...)
 }
 
 bd0 <- function(x, np,
@@ -727,7 +727,7 @@ stirlerr <- function(n, scheme = c("R3", "R4.1"),
                 print(table(cut(n[n > cutoffs[1]], c(cutoffs,Inf))))
             }
             ## From S4 on: Maple asympt(ln(GAMMA(x+1)), x, 23);
-            ##             ----- --> ../Misc/stirlerr-trms.R
+            ##             ----- --> ../Misc/stirlerr-trms.R <-----
             S0 <- 0.083333333333333333333       ## 1/12 */
             S1 <- 0.00277777777777777777778     ## 1/360 */
             S2 <- 0.00079365079365079365079365075 ## 1/1260

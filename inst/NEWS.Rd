@@ -4,7 +4,29 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
-\section{Version 0.4-3 (2021-05-05, svn r166)}{
+\section{Version 0.4-4 (2021-05-22, svn r175)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item new \code{bd0_*()} versions of \code{bd0()}, based mainly on \code{log1pmx()}.
+    }
+  }
+  \subsection{REFACTORING}{
+    \itemize{
+      \item To be more modular, our \file{test-tools.R} no longer
+      \code{source()} those of \pkg{Matrix}.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \file{src/bd0.c} gave warning with some compiler settings with
+      \code{-Wself-assign}.% but our gcc 10.2.1 (20201125) does not work with -Wself-assign
+
+      \item \file{test-tools.R} \code{readRDS_()} thinko fixed.
+    }
+  }
+}
+
+\section{Version 0.4-3 (2021-05-05, svn r166)}{% = CRAN publication
   \subsection{NEW FEATURES}{
     \itemize{
       \item Provide \R functions

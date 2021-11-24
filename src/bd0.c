@@ -1,5 +1,11 @@
 /*
- * This is a possibly *TEMPORARY* copy in Martin Maechler's  DPQ  CRAN package
+ * Originally a copy of <Rsrc>/src/nmath/bd0.c  (by R Core et al, see below)
+ *                      ----------------------
+ * The version here provide *more* options, notably for experimentation and in order
+ * to provide compatibility to *previous* R (and DPQ) implementations.
+ * These are
+ *
+ *	Copyright (C) 2021 Martin Maechler,  maechler@stat.math.ethz.ch
  *
  *
  *  AUTHORS
@@ -73,7 +79,7 @@ double bd0(double x, double np, double delta, int maxit, int trace)
 	    }
 	}
 	MATHLIB_WARNING5("bd0(%g, %g): T.series failed to converge in %d it.; s=%g, ej/(2j+1)=%g\n",
-			 x, np, maxit, s, ej/((2*1000)+1));
+			 x, np, maxit, s, ej/((maxit<<1)+1));
     }
     /* else:  | x - np |  is not too small */
     return(x*log(x/np)+np-x);
@@ -231,7 +237,7 @@ static const float bd0_scale[128 + 1][4] = {
  *
  * Deliver the result back in two parts, *yh and *yl.
  */
-void ebd0(double x, double M, double *yh, double *yl)
+void ebd0(double x, double M, double *yh, double *yl, int trace)
 {
 	const int Sb = 10;
 	const double S = 1u << Sb; // = 2^10 = 1024
@@ -243,8 +249,10 @@ void ebd0(double x, double M, double *yh, double *yl)
 	if (x == 0) { *yh = M;         return; }
 	if (M == 0) { *yh = ML_POSINF; return; }
 
+	if (M/x == ML_POSINF) { *yh = M; return; }//  as when (x == 0)
+
 	int e;
-	/* FIXME: handle overflow/underflow in division below */
+	// NB: M/x overflow handled above; underflow should be handled by fg = Inf
 	double r = frexp (M / x, &e); // => r in  [0.5, 1) and 'e' (int) such that  M/x = r * 2^e
 
 	// prevent later overflow
@@ -254,12 +262,22 @@ void ebd0(double x, double M, double *yh, double *yl)
 	// now,  0 <= i <= N
 	double f = floor (S / (0.5 + i / (2.0 * N)) + 0.5);
 	double fg = ldexp (f, -(e + Sb)); // ldexp(f, E) := f * 2^E
-#ifdef DEBUG_bd0
-	REprintf("ebd0(%g, %g): M/x = r*2^e = %g * 2^%d; i=%d, f=%g, fg=f*2^E=%g\n", x, M, r,e, i, f, fg);
+
+// #ifdef DEBUG_bd0
+    if(trace) {
+	REprintf("ebd0(%g, %g): M/x = (r=%.15g) * 2^(e=%d); i=%d, f=%g, fg=f*2^-(e+10)=%g\n",
+		 x, M, r,e, i, f, fg);
+	if (fg == ML_POSINF) {
+	    REprintf(" --> fg = +Inf --> return( +Inf )\n");
+	    *yh = fg; return;
+	}
 	REprintf("     bd0_sc[0][0..3]= ("); for(int j=0; j < 4; j++) REprintf("%g ", bd0_scale[0][j]); REprintf(")\n");
 	REprintf("i -> bd0_sc[i][0..3]= ("); for(int j=0; j < 4; j++) REprintf("%g ", bd0_scale[i][j]); REprintf(")\n");
 	REprintf( "  small(?)  (M*fg-x)/x = (M*fg)/x - 1 = %.16g\n", (M*fg-x)/x);
-#endif
+    }
+    else
+// #endif
+	if (fg == ML_POSINF) { *yh = fg; return; }
 
 	/* We now have (M * fg / x) close to 1.  */
 
@@ -290,41 +308,55 @@ void ebd0(double x, double M, double *yh, double *yl)
 	    *yl += d2;				\
 	} while(0)
 
-#ifdef DEBUG_bd0
+// #ifdef DEBUG_bd0
+    if(trace) {
 	{
 	    double log1__ = log1pmx((M * fg - x) / x),
-		d = -x * log1__;
-	    REprintf(" 1a. before adding  -x * log1pmx(.) = -x * %g = %g\n", log1__, d);
-	    ADD1(d);
-	    REprintf(" 1. after ADD1(-x * log1pmx(.): yl,yh=(%g, %g); yl+yh=%g\n", *yl, *yh, (*yl)+(*yh));
+		xl = -x * log1__;
+	    REprintf(" 1a. before adding  -x * log1pmx(.) = -x * %g = %g\n", log1__, xl);
+	    ADD1(xl);
+	    REprintf(" 1. after A.(-x*l..):       yl,yh = (%13g, %13g); yl+yh= %g\n",
+		     *yl, *yh, (*yl)+(*yh));
 	}
-
+        if(fg == 1) {
+            REprintf("___ fg = 1 ___ skipping further steps\n");
+            return;
+        }
+	// else  [ fg != 1 ]
+	REprintf(" 2:  A(x*b[i,j]) and A(-x*b[0,j]), j=1:4:\n");
 	for (int j = 0; j < 4; j++) {
 	    ADD1( x     * bd0_scale[i][j]);  /* handles  x*log(fg*2^e) */
-	    REprintf(" A(+ b[i,%d]): (%g, %g);", j, *yl, *yh);
-	}
-	REprintf("\n 2a. after loop 1 w/ ADD1(+):   yl,yh=(%g, %g); yl+yh=%g\n", *yl, *yh, (*yl)+(*yh));
-	for (int j = 0; j < 4; j++) {
+	    REprintf(" j=%d: (%13g, %13g);", j, *yl, *yh);
 	    ADD1(-x * e * bd0_scale[0][j]);  /* handles  x*log(1/ 2^e) */
-	    REprintf(" A(- b[0,%d]): (%g, %g);", j, *yl, *yh);
+	    REprintf(" (%13g, %13g); yl+yh= %g\n", *yl, *yh, (*yl)+(*yh));
+            if(!R_FINITE(*yh)) {
+                REprintf(" non-finite yh --> return((yh=Inf, yl=0))\n");
+		*yh = ML_POSINF; *yl = 0; return;
+            }
 	}
-	REprintf("\n 2b. after loop 2 w/ ADD1(-):   yl,yh=(%g, %g); yl+yh=%g\n", *yl, *yh, (*yl)+(*yh));
-#else
+    } else {
+// #else
 	ADD1(-x * log1pmx ((M * fg - x) / x));
+        if(fg == 1) return;
+	// else (fg != 1) :
 	for (int j = 0; j < 4; j++) {
 	    ADD1( x     * bd0_scale[i][j]);  /* handles  x*log(fg*2^e) */
 	    ADD1(-x * e * bd0_scale[0][j]);  /* handles  x*log(1/ 2^e) */
+            if(!R_FINITE(*yh)) { *yh = ML_POSINF; *yl = 0; return; }
 	}
-#endif
+    }
+// #endif
 
 	ADD1(M);
-#ifdef DEBUG_bd0
-	REprintf(" 3. after ADD1(M):              yl,yh=(%g, %g); yl+yh=%g\n", *yl, *yh, (*yl)+(*yh));
-#endif
+// #ifdef DEBUG_bd0
+    if(trace)
+	REprintf(" 3. after ADD1(M):            yl,yh = (%13g, %13g); yl+yh= %g\n", *yl, *yh, (*yl)+(*yh));
+// #endif
 	ADD1(-M * fg);
-#ifdef DEBUG_bd0
-	REprintf(" 4. after ADD1(- M*fg):         yl,yh=(%g, %g); yl+yh=%g\n\n", *yl, *yh, (*yl)+(*yh));
-#endif
+// #ifdef DEBUG_bd0
+    if(trace)
+	REprintf(" 4. after ADD1(- M*fg):       yl,yh = (%13g, %13g); yl+yh= %g\n\n", *yl, *yh, (*yl)+(*yh));
+// #endif
 }
 
 #undef ADD1
@@ -343,7 +375,7 @@ SEXP dpq_bd0(SEXP x_, SEXP np_, SEXP delta_,
     if(length(maxit_) != 1)   error("'length(%s)' must be 1, but is %d", "maxit",  length(maxit_));
     if(length(version_) != 1) error("'length(%s)' must be 1, but is %d", "version",length(version_));
     if(length(trace_) != 1)   error("'length(%s)' must be 1, but is %d", "trace",  length(trace_));
-    // otherwise, recycle to common length n :
+    // otherwise, recycle (x, np) to common length n :
     PROTECT(x_  = isReal(x_)  ? x_  : coerceVector(x_,  REALSXP));
     PROTECT(np_ = isReal(np_) ? np_ : coerceVector(np_, REALSXP));
     SEXP r_ = PROTECT(allocVector(REALSXP, n)); // result
@@ -366,3 +398,47 @@ SEXP dpq_bd0(SEXP x_, SEXP np_, SEXP delta_,
     UNPROTECT(3);
     return(r_);
 }
+
+// R Interface :
+SEXP dpq_ebd0(SEXP x_, SEXP np_, SEXP trace_)
+{
+    R_xlen_t
+	n_x  = XLENGTH(x_),
+	n_np  = XLENGTH(np_),
+	n = (n_x >= n_np ? n_x : n_np);
+    if(!n_x || !n_np) return allocVector(REALSXP, 0); // length 0
+    if(length(trace_) != 1)   error("'length(%s)' must be 1, but is %d", "trace",  length(trace_));
+    // otherwise, recycle (x, np) to common length n :
+    PROTECT(x_  = isReal(x_)  ? x_  : coerceVector(x_,  REALSXP));
+    PROTECT(np_ = isReal(np_) ? np_ : coerceVector(np_, REALSXP));
+    SEXP r_ = PROTECT(allocMatrix(REALSXP, 2, n)); // result =^= rbind(yh=yh, yl=yl)
+    double *x = REAL(x_), *np = REAL(np_)
+	/* , delta = asReal(delta_) */
+	, *r = REAL(r_);
+    int
+	/* maxit   = asInteger(maxit_), */
+	// version = asInteger(version_),
+	trace   = asInteger(trace_);
+
+    if(trace) {
+	REprintf("dpq_ebd0(x[1:%d], np[1:%d], ... ):", n_x, n_np);
+    }
+    // version++; // currently unused
+
+    for(R_xlen_t i=0, i2=0; i < n; i++, i2+=2) {
+        // void ebd0(double x, double M, double *yh, double *yl, int trace)
+	ebd0(x[i % n_x], np[i % n_np], r+i2, r+(i2+1), trace);
+    }
+    // add row names to  returned matrix :
+    SEXP dm = PROTECT(allocVector(VECSXP, 2)); // dimnames(r_)
+    SEXP rnames = PROTECT(allocVector(STRSXP, 2));
+    SET_STRING_ELT(rnames, 0, mkChar("yh"));
+    SET_STRING_ELT(rnames, 1, mkChar("yl"));
+    SET_VECTOR_ELT(dm, 0, rnames);
+    // SET_VECTOR_ELT(dm, 1, R_NilValue); // empty colnames
+    setAttrib(r_, R_DimNamesSymbol, dm);
+
+    UNPROTECT(5);
+    return(r_);
+}
+

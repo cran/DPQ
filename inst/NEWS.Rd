@@ -4,7 +4,52 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
-\section{Version 0.4-4 (2021-05-22, svn r175)}{
+\section{Version 0.5-0 (2021-09-10, svn r183)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item new \code{ebd0C()} interface to C version; helps to fix
+      lapsus in pure \R version \code{ebd0()}:
+
+      \code{ebd0(x, M)} for large \code{M} now checks for overflow in
+      \code{M/x}, and notably the case \code{f * 2^-(e+10) =: fg == Inf}.
+
+      \item In \code{bd0()} work around underflow of \code{(x-np)/(x+np)}.
+
+      \item new \R functions \code{frexp()} and \code{ldexp()} for getting
+      and setting base-2 representations of numbers,
+      and new \R function \code{modf()} to split number into integer and fractional part,
+      all interfacing the C99 (math lib) standard functions of the same name.
+
+      \item \code{logcfR.(x)} has been \dQuote{vectorized} in \code{x} even
+      though it's iterative with different number of iterations for each
+      \code{x[i]}, and is hence considerably faster when \code{x} is an
+      \code{"mpfr"} vector.
+
+      TODO: Consider renaming the two logcfR versions; at least neither is deprecated!
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item fixed embarrassing typo (two \code{i}'s) bug in \code{logcfR()}
+
+      \item \code{stirlerr(n)} now also works when \code{is.integer(n)} and
+      \code{n} is large enough for \code{n * n} to overflow (to \code{NA}).
+
+      \item fix typo/thinko in \code{dnbinomR()}
+
+      \item ditto in \code{logcfR(*, trace=TRUE)} iteration report.
+
+      \item \code{dpois_raw(x, *)} now works up to maximal \code{x}, now
+      preventing overflow in previous \code{2*pi*x} computation.
+
+      \item \code{dnbinomR()} and \code{dnbinom.mu()} fix for \code{x >
+	size} when \code{log=TRUE}, notably for \code{x >> size}.
+
+    }
+  }
+}
+
+\section{Version 0.4-4 (2021-05-22, svn r175)}{% CRAN publication 05-27
   \subsection{NEW FEATURES}{
     \itemize{
       \item new \code{bd0_*()} versions of \code{bd0()}, based mainly on \code{log1pmx()}.

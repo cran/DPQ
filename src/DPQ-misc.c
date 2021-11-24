@@ -85,36 +85,50 @@ SEXP R_frexp(SEXP x_)
 {
     R_xlen_t n = XLENGTH(PROTECT(x_ = isReal(x_) ?
 				 Rf_duplicate(x_) : coerceVector(x_, REALSXP)));
-    SEXP r_ = allocVector(REALSXP, n), // (r_, e_) will be protected as parts of ans
-	 e_ = allocVector(INTSXP,  n),
-	ans = PROTECT(allocVector(VECSXP, 2)), nms; // --> list(r = ., e = .)
-    SET_VECTOR_ELT(ans, 0, r_);
-    SET_VECTOR_ELT(ans, 1, e_);
-    setAttrib(ans, R_NamesSymbol, nms = allocVector(STRSXP, 2));
-    SET_STRING_ELT(nms, 0, mkChar("r"));
-    SET_STRING_ELT(nms, 1, mkChar("e"));
+    static const char *ans_nms[] = {"r", "e", ""};
+    SEXP ans = PROTECT(mkNamed(VECSXP, ans_nms)), r_, e_; // --> ans = list(r = r_, e = e_)
+    SET_VECTOR_ELT(ans, 0, r_ = PROTECT(allocVector(REALSXP, n)));
+    SET_VECTOR_ELT(ans, 1, e_ = PROTECT(allocVector(INTSXP,  n)));
 
     double *x = REAL(x_), *r = REAL(r_);
     int *e = INTEGER(e_);
     for(R_xlen_t i=0; i < n; i++)
 	r[i] = frexp(x[i], e+i);
-    UNPROTECT(2);
+    UNPROTECT(4);
     return ans;
 }
 
 // ldexp(f, E) := f * 2^E
 SEXP R_ldexp(SEXP f_, SEXP E_)
 {
-    R_xlen_t n = XLENGTH(PROTECT(f_ = isReal(f_) ?
-				 Rf_duplicate(f_) : coerceVector(f_, REALSXP)));
-    PROTECT(E_ = isInteger(E_) ? Rf_duplicate(E_) : coerceVector(E_, INTSXP));
-    if(XLENGTH(E_) != n) // FIXME(?) --> recycling (f, E) !
-	error(_("'E' is not of the same length as 'f': %.0f != %.0f"), (double)n, (double)XLENGTH(E_));
+    R_xlen_t n_f = XLENGTH(PROTECT(f_ = isReal(f_) ?
+				 Rf_duplicate(f_) : coerceVector(f_, REALSXP))),
+	n_E = XLENGTH(PROTECT(E_ = isInteger(E_) ? Rf_duplicate(E_) : coerceVector(E_, INTSXP))),
+	n = (n_f >= n_E) ? n_f : n_E; // and recycle f_ or E_ when needed
     SEXP r_ = PROTECT(allocVector(REALSXP, n));
     double *f = REAL(f_), *r = REAL(r_);
     int *E = INTEGER(E_);
     for(R_xlen_t i=0; i < n; i++)
-	r[i] = ldexp(f[i], E[i]);
+	r[i] = ldexp(f[i % n_f], E[i % n_E]);
     UNPROTECT(3);
     return r_;
+}
+
+/* in C have     fr = modf (x, &i);
+ * modf stores the integer part in *i, and returns the fractional part.
+ *
+ * returning the "two results" as list(fr=., i=.) in R */
+SEXP R_modf(SEXP x_)
+{
+    R_xlen_t n = XLENGTH(PROTECT(x_ = isReal(x_) ?
+				 Rf_duplicate(x_) : coerceVector(x_, REALSXP)));
+    static const char *ans_nms[] = {"fr", "i", ""};
+    SEXP ans = PROTECT(mkNamed(VECSXP, ans_nms)), r_, i_; // --> ans = list(fr = r_, i = i_)
+    SET_VECTOR_ELT(ans, 0, r_ = PROTECT(allocVector(REALSXP, n)));
+    SET_VECTOR_ELT(ans, 1, i_ = PROTECT(allocVector(REALSXP, n)));
+    double *x = REAL(x_), *r = REAL(r_), *e = REAL(i_);
+    for(R_xlen_t i=0; i < n; i++)
+	r[i] = modf(x[i], e+i);
+    UNPROTECT(4);
+    return ans;
 }

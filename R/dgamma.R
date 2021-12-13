@@ -189,7 +189,7 @@ bd0 <- function(x, np,
                 verbose = getOption("verbose"))
 {
     ## stopifnot(length(x) == 1) -- rather vectorize now:
-    stopifnot(0 < delta, delta <= .99, maxit >= 1)
+    stopifnot(0 <= delta, delta <= .99, maxit >= 1)
     if((n <- length(x)) > (n2 <- length(np)))
         np <- rep_len(np, n)
     else if(n < n2)
@@ -207,7 +207,9 @@ bd0 <- function(x, np,
                 warning("invalid argument values in  (x, np)")
                 return(NaN)
             }
-            if(abs(x-np) < delta * (x+np)) {
+            ##          ____           
+            if(abs(x-np) <= delta * (x+np)) { #  '<='  was  '<' ;  '<=' allows to use delta=0
+            ##          ~~~~ 
                 v <- (x-np)/(x+np)
                 if(v == 0 && x != np) { # had underflow
                     F <- sqrt(x) * sqrt(np) # scaling factor --
@@ -545,8 +547,8 @@ ebd0.1 <- function(x, M, verbose, ...) # return  c(yh, yl)
     f  <- floor (S / (0.5 + i / (2.0 * N)) + 0.5);
     fg  <- .Call(C_R_ldexp, f, -(e + Sb)) # // ldexp(f, E) := f * 2^E
     if(verbose) {
-	cat(sprintf("ebd0(%g, %g): M/x = (r=%.15g) * 2^(e=%d); i=%d, f=%g, fg=f*2^-(e+10)=%g\n",
-                    x, M, r,e, i, f, fg))
+	cat(sprintf("ebd0(x=%g, M=%g): M/x = (r=%.15g) * 2^(e=%d); i=%d,\n  f=%g, fg=f*2^-(e+%d)=%g\n",
+                    x, M, r,e, i, f, Sb, fg))
 	if (fg == Inf) {
 	    cat(sprintf(" --> fg = +Inf --> return( +Inf )\n"))
             return(c(yh=fg, yl=yl))
@@ -591,7 +593,7 @@ ebd0.1 <- function(x, M, verbose, ...) # return  c(yh, yl)
         d <- -x * log1..
 	cat(sprintf(" 1a. before adding  -x * log1pmx(.) = -x * %g = %g\n", log1.., d))
         ADD1(d)
-	cat(sprintf(        " 1. after A.(-x*l..):       yl,yh = (%13g, %13g); yl+yh= %g\n",
+	cat(sprintf(" 1. after A.(-x*l..):       yl,yh = (%13g, %13g); yl+yh= %g\n",
                     yl, yh, (yl)+(yh)))
         if(fg == 1) {
             cat("___ fg = 1 ___ skipping further steps\n")
@@ -600,7 +602,7 @@ ebd0.1 <- function(x, M, verbose, ...) # return  c(yh, yl)
         ##  else -- fg != 1
         cat(sprintf(" 2:  A(x*b[i,j]) and A(-x*b[0,j]), j=1:4:\n"))
         for (j in 1:4) {
-            ADD1( x * logf_mat[j, i+1L]);  # /* handles  x*log(fg*2^e) */
+            ADD1(  x * logf_mat[j, i+1L]);  # /* handles  x*log(fg*2^e) */
             cat(sprintf(" j=%d: (%13g, %13g);", j, yl, yh))
             ADD1((-x * logf_mat[j, 0+1L]) * e);  # /* handles  x*log(1/ 2^e) -- *order* important
             cat(sprintf(" (%13g, %13g); yl+yh= %g\n", yl, yh, (yl)+(yh)))

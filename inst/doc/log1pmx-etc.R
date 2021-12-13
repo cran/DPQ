@@ -71,7 +71,7 @@ lcurve(log1pmx, -.9999, 7, main=quote(log1pmx(x) == log(1+x)-x))
                             rect(-.1,  log1pmx(-.1  ), .1  , 0); zoomTo0(1/2, 1)
 lcurve(log1pmx, -.1,  .1 ); rect(-.01, log1pmx(-.01 ), .01 , 0); zoomTo0(.02, .001)
 lcurve(log1pmx, -.01, .01); rect(-.002,log1pmx(-.002), .002, 0); zoomTo0(2e-3,1e-5)
-lcurve(\(x) -log1pmx(x), -.002, .002, log="y", yaxt="n") -> l1r
+lcurve(function(x) -log1pmx(x), -.002, .002, log="y", yaxt="n") -> l1r
 sfsmisc::eaxis(2); abline(v=0, lty=3)
 d1r <- cbind(as.data.frame(l1r), y.naive = with(l1r, -(log(1+x)-x)))
 c4 <- adjustcolor(4, 1/3)

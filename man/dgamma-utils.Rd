@@ -59,13 +59,13 @@ lgammacor(x, nalgm = 5, xbig = 2^26.5)% --> ../R/utils.R <-> ../src/lgammacor.c
     otherwise the density at \code{x}.}
   \item{verbose}{logical indicating if some information about the
     computations are to be printed.}
-  \item{delta, bd0.delta}{a positive number \eqn{< 1} (practically required
+  \item{delta, bd0.delta}{a non-negative number \eqn{< 1} (practically required
     to be \eqn{\le .99}), a cutoff for \code{bd0()}
-    where the \code{\link{logcf}()} series expansion is used when
-    \eqn{|x - M| < delta*(x+M)}.}
+    where a continued fraction series expansion is used when \eqn{|x - M| < delta*(x+M)}.}
   \item{tol_logcf, eps2, minL1, trace.lcf, logCF, ...}{
-    optional tuning arguments passed to \code{\link{log1pmx}()}.}
-  \item{maxit}{the number of \code{logcf()} terms to be used in
+    optional tuning arguments passed to \code{\link{log1pmx}()}, and to its
+    options passed to \code{\link{logcf}()}.}
+  \item{maxit}{the number of series expansion terms to be used in
     \code{bd0()} when \eqn{|x-M|} is small.  The default is \eqn{k} such
     that \eqn{\delta^{2k} \le 2^{-1022-52}}, i.e., will underflow to zero.}
   \item{s0}{the very small \eqn{s_0} determining that \code{bd0() = s}
@@ -108,8 +108,8 @@ lgammacor(x, nalgm = 5, xbig = 2^26.5)% --> ../R/utils.R <-> ../src/lgammacor.c
   \eqn{u := 2t^2 -1 \in [-1 + \epsilon_B, 1]}.
 }
 \details{
-  \describe{% >> TODO: Move this mostly into this vignette ((or ../tests/
-	    % ===>  ../vignettes/log1pmx-etc.Rnw
+  \describe{% >> Now, most of this and more is in vignette
+	    % ../vignettes/log1pmx-etc.Rnw   <<<<<<<<<
     \item{\code{bd0()}:}{Loader's \dQuote{Binomial Deviance} function; for
       \eqn{x, M > 0} (where the limit \eqn{x \to 0}{x -> 0} is allowed).
       In the case of \code{\link{dbinom}}, \eqn{x} are integers (and
@@ -133,12 +133,17 @@ lgammacor(x, nalgm = 5, xbig = 2^26.5)% --> ../R/utils.R <-> ../src/lgammacor.c
      and \deqn{p_1l_1(t) := (t+1)\log(1+t) - t = \frac{t^2}{2} - \frac{t^3}{6} ...}{
                 p1l1 (t) := (t+1)*log(1+t) - t = t^2/2 - t^3/6 ...} where
       the Taylor series expansion is useful for small \eqn{|t|}.
+
+      Note that \code{bd0(x, M)} now also works when \code{x} and/or
+      \code{M} are arbitrary-accurate mpfr-numbers (package \CRANpkg{Rmpfr}).
     }% item
   }% describe
 }
 \references{
   C. Loader (2000), see \code{\link{dbinom}}'s documentation.
   % ~/R/D/r-devel/R/src/library/stats/man/Binomial.Rd
+
+  Our package vignette \emph{log1pmx, bd0, stirlerr - Probability Computations in R}.
 }
 \author{Martin Maechler}
 \seealso{

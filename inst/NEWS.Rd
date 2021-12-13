@@ -4,6 +4,34 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.5-1 (2021-12-10, svn r197)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{bd0(x, np, delta, ..)} now uses
+      \code{if (|x-np| <= delta * (x+np))}  (less-equal instead of strictly
+      less), and hence setting \code{delta = 0} is now allowed, using the
+      series expansion only for \code{x == np}, useful e.g., for the case
+      of highly accurate mpfr-numbers.
+
+      Similarly, in \code{log1pmx(x, .., eps2, ..)},  \code{eps2 = 0} is now allowed.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item consistency between \code{ebd0()} and \code{ebd0C()}:
+      multiplication \code{ * e } coming last ("bug" did not show ..).
+
+      \item \code{okLongDouble()} should no longer fail on M1 mac.
+
+      \item \code{ebd0C()} now checking \eqn{|yl| < 5.5} before returning; was
+      horrendously wrong on Windows compiled with \command{-mnative} as long
+      as it included (the default) \command{-mfma} (FMA:= Fused-Multiply-Add).
+
+      \item fix \command{rchk} issue: "need" \code{PROTECT(.)} while calling allocating \code{lgamma1p()}.
+    }
+  }
+}
+
 \section{Version 0.5-0 (2021-09-10, svn r183)}{
   \subsection{NEW FEATURES}{
     \itemize{

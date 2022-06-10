@@ -1,8 +1,3 @@
-
-# ifdef _WIN32
-#   define __USE_MINGW_ANSI_STDIO 1
-# endif
-
 #include <Rmath.h>
 // for F77_NAME() :
 #include <R_ext/RS.h>
@@ -145,6 +140,14 @@
 # define LDOUBLE double
 #endif
 
+#if defined(_WIN32)  &&  defined(HAVE_LONG_DOUBLE)
+#  ifdef __USE_MINGW_ANSI_STDIO
+#  undef __USE_MINGW_ANSI_STDIO
+#  endif
+// (such that "%Lg" works) :
+#  define __USE_MINGW_ANSI_STDIO 1
+#endif
+
 #ifdef HAVE_LONG_DOUBLE
 # define EXP expl
 # define EXPm1 expm1l
@@ -154,9 +157,6 @@
 // Rmpfr: log(mpfr(2, 130)) {130 bits is "more than enough": most long_double are just 80 bits!}
 # define M_LN2_ 0.6931471805599453094172321214581765680755L
 # define PR_g_ "Lg"
-# ifdef _WIN32 // all of Windows (such that "%Lg" works)
-#   define __USE_MINGW_ANSI_STDIO 1
-# endif
 
 #else //--------------------
 
@@ -243,6 +243,19 @@ double algdiv(double a, double b);
 SEXP R_algdiv(SEXP a_, SEXP b_)
     ;
 
+// bpser.c: --------------------------------------------------------------------
+
+double gam1(double a); //  1/gamma(a+1) - 1    for -0.5 <= a <= 1.5
+double gamln1(double a);// log(gamma(1 + a))   for -0.2 <= a <= 1.25
+
+double bpser(double a, double b, double x, double eps, int *err_bp, int log_p, Rboolean verbose);
+// .Call()ed :
+SEXP R_bpser(SEXP a_, SEXP b_, SEXP x_, SEXP eps_, SEXP log_p_, SEXP verbose_, SEXP warn_)
+    ;
+
+
+
+
 // bd0.c: --------------------------------------------------------------------
 double bd0(double x, double np, double delta, int maxit, int trace);
 void  ebd0(double x, double M, double *yh, double *yl, int trace);
@@ -313,3 +326,8 @@ SEXP R_modf(SEXP x_);
  *					                    sign(i) = sign(fr) = sign(x)
  */
 
+SEXP R_dpsifn(SEXP x_, SEXP m_, SEXP deriv_1, SEXP kode2_);
+/* result: a list(dpsi = <m x n> matrix of dpsi() values,
+ *                nz   =  n-vector,
+ *                ierr =  n-vector)
+ */

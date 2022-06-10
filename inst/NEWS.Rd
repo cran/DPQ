@@ -4,6 +4,52 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.5-2 (2022-06-08, svn r212)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{qbetaAppr()} (and the \code{qbetaAppr.{1,3}()}
+      auxiliaries) now get a \code{log.p} argument.
+
+      \item all(?) \code{qbeta.Appr*()} functions now accept a
+      \code{lower.tail} argument (with default \code{TRUE}). % __FIXME__ Needs TESTS!
+      %> ../tests/qbeta-dist.R -- C-s for 'FIXME: More qbetaAppr*' (and
+      %%%lower.tail ..)
+
+      \item New \R function \code{dpsifn()}, as interface to \R's C API
+      \code{dpsifn()}, the workhorse of all \R's \code{psigamma()}
+      functions.
+
+      \item \code{dpois_raw(x, lambda, *)} gets new cutoff \code{small.x__lambda}
+      to \emph{not} use \code{bd0()} or \code{ebd0()} when \code{x} is much
+      smaller than \code{lambda}.
+
+      \item Simple functions, mostly for didactical and comparison purposes,
+      \code{dpois_simpl()}, \code{dpois_simpl0()} and
+      \code{stirlerr_simpl()}, all of which use the \dQuote{simple} direct
+      formula which leads to numerical cancellation typically.
+
+      \item New \R function \code{bpser()} interfacing to the C function of
+      the same in \R's Mathlib \code{pbeta()} or \code{bratio()} in file
+      \file{nmath/toms708.c}.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item Updated URL of Abramowitz & Stegun.
+      \item Fixed \code{\\} escape in one \file{man/*.Rd}
+    }
+  }
+  \subsection{Misc}{
+    \itemize{
+      \item Our \file{tests/*.R} no longer rely on the \CRANpkg{Matrix}
+      \file{test-tools.R} collection but rather use our own. % ./test-tools.R
+
+      \item In \file{tests/chisq-nonc-ex.R} (and \file{DESCRIPTION}), we've
+      replaced \pkg{akima} by \CRANpkg{interp} as the latter has a FOSS licence.
+    }
+  }
+}
+
 \section{Version 0.5-1 (2021-12-10, svn r197)}{
   \subsection{NEW FEATURES}{
     \itemize{

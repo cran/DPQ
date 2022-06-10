@@ -35,11 +35,21 @@ dgamma.R <- function(x, shape, scale = 1, log)
     }
 }
 
+## not clear if we should *ever* use this {OTOH, factorial(x) can be 100% accurate, e.g., for MPFR
+##          ( <==>  Rmpfr's  factorialMpfr() and gmp factorialZ() )
+dpois_simpl0 <- function(x, lambda, log=FALSE)
+    .D_val(exp(-lambda) * lambda^x / factorial(x), log)
+
+## when  x & lambda  are different orders of magnitude, this may be more accurate than anything:
+dpois_simpl <- function(x, lambda, log=FALSE)
+    .D_exp(-lambda + (x*log(lambda) - lgamma(x+1)), log)
+
 ## ~/R/D/r-devel/R/src/nmath/dpois.c   --> dpois_raw()
 ## // called also from dgamma.c, pgamma.c, dnbeta.c, dnbinom.c, dnchisq.c :
 dpois_raw <- function(x, lambda, log=FALSE,
                       ## for now:                            NB: ebd0_v1    R version *broken* \\\\\\\
                       version = c("bd0_v1", "bd0_p1l1d", "bd0_p1l1d1", "bd0_l1pm", "ebd0_C1", "ebd0_v1"),
+                      small.x__lambda = .Machine$double.eps,
                       ## future ?! version = c("ebd0_v1", "bd0_v1"),
                       bd0.delta = 0.1,
                       ## optional arguments of log1pmx() :
@@ -66,6 +76,10 @@ dpois_raw <- function(x, lambda, log=FALSE,
 
 
     if(M == 0) return(r)
+
+    DBL_MIN <- .Machine$double.xmin # 2.225e-308
+    stopifnot(length(small.x__lambda) == 1, small.x__lambda >= DBL_MIN)
+
     ## M >= 1 :
     x      <- rep_len(x,      M)
     lambda <- rep_len(lambda, M)
@@ -81,12 +95,20 @@ dpois_raw <- function(x, lambda, log=FALSE,
         r[B] <- R_D__0
         BB <- BB & !B
     }
-    DBL_MIN <- .Machine$double.xmin # 2.225e-308
-    if(any(B <- BB & x <= lambda * DBL_MIN)) {
-        if(verbose & any(i <- B & x > 0))
-           cat(sprintf(" very small x/lambda in [%g,%g]\n for x[%s]\n",
-                       min(x[B & x > 0]), max(x[B & x > 0]), inds(which(i))))
-        r[B] <- .D_exp(-lambda[B], log)
+    if(any(BB & x <= lambda * small.x__lambda)) {
+        if(any(B <- BB & x <= lambda * DBL_MIN)) {
+            if(verbose & any(i <- B & x > 0))
+                cat(sprintf(" extremely small x/lambda in [%g,%g]\n for x[%s]\n",
+                            min(x[i]), max(x[i]), inds(which(i))))
+            r[B] <- .D_exp(-lambda[B], log)
+        } else { ## x << lambda (less extreme)  x/lambda  in (DBL_MIN, small.x__lambda]
+            ## ebd0(x, lambda) not good, and there's no bad cancellation here
+            B <- !B
+            if(verbose)
+                cat(sprintf(" very small x/lambda in [%g,%g]\n for x[%s]\n",
+                            min(x[B]), max(x[B]), inds(which(B))))
+	    r[B] <- .D_exp(-lambda[B] + (x[B]*log(lambda[B]) -lgamma(x[B]+1)), log)
+        }
         BB <- BB & !B
     }
     if(any(B <- BB & lambda < x * DBL_MIN)) {
@@ -207,12 +229,16 @@ bd0 <- function(x, np,
                 warning("invalid argument values in  (x, np)")
                 return(NaN)
             }
-            ##          ____           
+            ##          ____
             if(abs(x-np) <= delta * (x+np)) { #  '<='  was  '<' ;  '<=' allows to use delta=0
-            ##          ~~~~ 
+            ##          ~~~~
                 v <- (x-np)/(x+np)
                 if(v == 0 && x != np) { # had underflow
                     F <- sqrt(x) * sqrt(np) # scaling factor --
+                    if(verbose)
+                        cat(sprintf(
+                              "bd0(%g, %g): Initial v == 0 --> rescaling with F = %g\n",
+                            N(x), N(np), N(F)))
                     ## could do better: replace  v * N  with  sv * N * sv  where sv := sqrt(v)
                     x. <- x/F
                     n. <- np/F
@@ -689,12 +715,35 @@ ebd0 <- function(x, M, verbose = getOption("verbose"), ...)
   0           1           2           3           4           5           6           7           8           9          10
 "
 
+##' [D]irect formula for stirlerr(), notably adapted to mpfr-numbers
+stirlerr_simpl <- function(n, minPrec = 128L) {
+    if(notNum <- !is.numeric(n)) {
+        precB <- if(isM <- inherits(n, "mpfr"))
+                     max(minPrec, Rmpfr::.getPrec(n))
+                 else if(isZQ <- inherits(n, "bigz") || inherits(n, "bigq"))
+                     max(minPrec, Rmpfr::getPrec(n))
+                 else
+                     minPrec
+        pi <- Rmpfr::Const("pi", precB)
+    }
+    if(notNum && !isM) {
+        n <- if(isZQ)
+                 Rmpfr::mpfr(n, precB)
+             else ## the object-author "should" provide a method:
+                 as(n, "mpfr")
+    }
+    ## direct formula (suffering from cancellation for largish n)
+    ## FIXME: This must use Rmpfr::Math() but it may not if not in search()
+    lgamma(n + 1) - (n + 0.5)*log(n) + n - log(2 * pi)/2
+}
+
+
 
 ##' stirlerr() now *vectorized* in  n
-stirlerr <- function(n, scheme = c("R3", "R4.1"),
+stirlerr <- function(n, scheme = c("R3", "R4.x"),
                      cutoffs = switch(scheme
                                     , R3   = c(15, 35, 80, 500)
-                                    , R4.1 = c(7.5, 8.5, 10.625, 12.125, 20, 26, 55, 200, 3300)
+                                    , R4.x = c(7.5, 8.5, 10.625, 12.125, 20, 26, 55, 200, 3300)
                                       )
                     , use.halves = missing(cutoffs)
                     , verbose = FALSE
@@ -717,28 +766,8 @@ stirlerr <- function(n, scheme = c("R3", "R4.1"),
             ## define it locally here :
             pk <- "Rmpfr"; req <- require
             if(!req(pk)) stop("Must use 'Rmpfr' for this")
-            ##' [D]irect formula for stirlerr(), notably adapted to mpfr-numbers
-            ## stirlerrM <-
-            stirlFn <- function(n, minPrec = 128L) {
-                if(notNum <- !is.numeric(n)) {
-                    precB <- if(isM <- inherits(n, "mpfr"))
-                                 max(minPrec, Rmpfr::.getPrec(n))
-                             else if(isZQ <- inherits(n, "bigz") || inherits(n, "bigq"))
-                                 max(minPrec, Rmpfr::getPrec(n))
-                             else
-                                 minPrec
-                    pi <- Rmpfr::Const("pi", precB)
-                }
-                if(notNum && !isM) {
-                    if(isZQ)
-                        n <- Rmpfr::mpfr(n, precB)
-                    else ## the object-author "should" provide a method:
-                        n <- as(n, "mpfr")
-                }
-                ## direct formula (suffering from cancellation)
-                ## FIXME: This must use Rmpfr::Math() but it may not if not in search()
-                lgamma(n + 1) - (n + 0.5)*log(n) + n - log(2 * pi)/2
-            }
+            ## direct formula:
+            stirlFn <- stirlerr_simpl
         }
         return(stirlFn(n)) # , precB = <n>   would be possible
     }
@@ -764,18 +793,8 @@ stirlerr <- function(n, scheme = c("R3", "R4.1"),
         if (any(S <- S & n <= cutoffs[1])) {
             if(verbose) cat(" case I (n <= ",format(cutoffs[1]),"), ", sep="")
             n. <- n[S]
-            ## nn  <- n. + n.
-            ## if(any(hlf <- nn == (n2 <- as.integer(nn)))) {
-            ##     if(verbose) { cat(" using halves for nn=2n=");str(n2[hlf]) }
-            ##     r[S][hlf] <- sferr_halves[n2[hlf] + 1L]
-            ## }
-            ## else ## M_LN_SQRT_2PI = ln(sqrt(2*pi)) = 0.918938.. = log(2*pi)/2
-            ## if(length(i <- which(!hlf))) {
-                ## n. <- n.[i]
-                if(verbose) { cat(" using direct formula for n="); str(n.) }
-                ## r[S][i] <- lgamma(n. + 1.) - (n. + 0.5)*log(n.) + n. - log(2*pi)/2
-                r[S] <- lgamma(n. + 1.) - (n. + 0.5)*log(n.) + n. - log(2*pi)/2
-            ## }
+            if(verbose) { cat(" using direct formula for n="); str(n.) }
+            r[S] <- lgamma(n. + 1.) - (n. + 0.5)*log(n.) + n. - log(2*pi)/2
         }
         if (any(!S)) { # has n > cutoffs[1]
             if(verbose) {
@@ -834,7 +853,7 @@ stirlerr <- function(n, scheme = c("R3", "R4.1"),
     }
 }
 
-##  error for 0, 0.5, 1.0, 1.5, ..., 14.5, 15.0.
+## stirlerr(n) for n = 0, 0.5, 1.0, 1.5, ..., 14.5, 15.0.
 ## const static double
 sferr_halves <- c(
     0.0, ## n=0 - wrong, place holder only */

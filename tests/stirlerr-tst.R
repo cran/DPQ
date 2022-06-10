@@ -9,49 +9,16 @@ for(pkg in c("Rmpfr", "DPQmpfr"))
     }
 require("Rmpfr")
 
-source(system.file(package="Matrix", "test-tools-1.R", mustWork=TRUE))
-## -> showProc.time(), assertError(), relErrV(), ...
+source(system.file(package="DPQ", "test-tools.R", mustWork=TRUE))
+## => showProc.time(), ...  list_() , loadList() ,  readRDS_() , save2RDS()
+relErrV <- sfsmisc::relErrV
 
-##' From ..../sfsmisc/R/relErr.R --- version that *keeps* matrix
-## Componentwise aka "Vectorized" relative error:
-## Must not be NA/NaN unless one of the components is  ==> deal with {0, Inf, NA}
-relErrV <- function(target, current, eps0 = .Machine$double.xmin) {
-    n <- length(target <- as.vector(target))
-    ## assert( <length current> is multiple of <length target>) :
-    lc <- length(current)
-    if(!n) {
-	if(!lc) return(numeric()) # everything length 0
-	else stop("length(target) == 0 differing from length(current)")
-    } else if(!lc)
-	stop("length(current) == 0 differing from length(target)")
-    ## else n, lc  > 0
-    if(lc %% n)
-	stop("length(current) must be a multiple of length(target)")
-    recycle <- (lc != n) # explicitly recycle
-    R <- if(recycle)
-	     target[rep(seq_len(n), length.out=lc)]
-	 else
-	     target # (possibly "mpfr")
-    R[] <- 0
-    ## use *absolute* error when target is zero {and deal with NAs}:
-    t0 <- abs(target) < eps0 & !(na.t <- is.na(target))
-    R[t0] <- current[t0]
-    ## absolute error also when it is infinite, as (-Inf, Inf) would give NaN:
-    dInf <- is.infinite(E <- current - target)
-    R[dInf] <- E[dInf]
-    useRE <- !dInf & !t0 & (na.t | is.na(current) | (current != target))
-    R[useRE] <- (current/target)[useRE] - 1
-    if(recycle) { # should also work when target is mpfrArray
-        if(!is.null(d <- dim(current)))
-            array(R, dim=d, dimnames=dimnames(current))
-        else if(!is.null(nm <- names(current)) && is.null(names(R))) # not needed for mpfr
-            `names<-`(R, nm)
-        else R
-    } else R
-}
+pks <- c("sfsmisc", "DPQ", "Rmpfr", "DPQmpfr")
+sapply(lapply(setNames(,pks), packageVersion), format)
+
 showProc.time()
 
-cutoffs <- c(15,35,80,500) # cut points, n=*, in the above "algorithm"
+cutoffs <- c(15,35,80,500) # cut points, n=*, in the stirlerr() "algorithm"
 ##
 n <- c(seq(1,15, by=1/4),seq(16, 25, by=1/2), 26:30, seq(32,50, by=2), seq(55,1000, by=5),
        20*c(51:99), 50*(40:80), 150*(27:48), 500*(15:20))
@@ -77,7 +44,7 @@ p.stirlerrDev <- function(n, precBits=2048, stnM = stirlerr(mpfr(n, precBits)), 
     op <- par(las = 1, mgp=c(2, 0.6, 0))
     on.exit(par(op))
     st <- stirlerr(n, cutoffs=cutoffs)
-    relE <- sfsmisc::relErrV(stnM, st)
+    relE <- relErrV(stnM, st)
     N <- asNumeric
     form <- if(abs) abs(N(relE)) ~ n else N(relE) ~ n
     plot(form, log=log, type=type, cex=cex, col=col, xlim=xlim, ylim=ylim,
@@ -143,7 +110,7 @@ showProc.time()
 ### ~19.April 2021: "This is close to *the* solution" (but ...)
 cuts <- c(7, 12, 20, 26, 60, 200, 3300)
 st. <- stirlerr(n=n, cutoffs = cuts, verbose=TRUE)
-relE <- asNumeric(sfsmisc::relErrV(st.nM, st.))
+relE <- asNumeric(relErrV(st.nM, st.))
 head(cbind(n, relE), 20)
 ## nice printout :
 print(cbind(n       = format(n, drop0trailing = TRUE),
@@ -184,12 +151,12 @@ p.stirlerrDev(n=n, stnM=st.nM, cex=1/4, type="o", cutoffs = cuts, ylim=c(-1,1)*4
 p.stirlerrDev(n=n, stnM=st.nM, cex=1/4, type="o", cutoffs = cuts, ylim=c(-1,1)*1e-15)
 
 st. <- stirlerr(n=n, cutoffs = cuts, verbose=TRUE)
-relE <- asNumeric(sfsmisc::relErrV(st.nM, st.))
+relE <- asNumeric(relErrV(st.nM, st.))
 head(cbind(n, relE), 20)
 ## nice printout :
 print(cbind(n       = format(n, drop0trailing = TRUE),
             stirlerr= format(st.,scientific=FALSE, digits=4),
-            relErr  = signif(asNumeric(sfsmisc::relErrV(st.nM, st.)), 4))
+            relErr  = signif(asNumeric(relErrV(st.nM, st.)), 4))
       , quote=FALSE)
 
 showProc.time()
@@ -250,13 +217,67 @@ axis(4, at=-1:2, col=c2, col.axis=c2)
 
 showProc.time()
 
+
+## use functionality originally in ~/R/MM/NUMERICS/dpq-functions/15628-dpois_raw_accuracy.R
+## now
+require(Rmpfr)
+
+
+## transition till DPQmpfr exports this *and* is on CRAN, to ease maintainer("DPQ")
+##                     vvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+if(file.exists(ff <- "~/R/Pkgs/DPQmpfr/R/dpoisEr.R")) withAutoprint({ #-------------
+
+source(ff)
+##-- ----- *or* move to vignette ../vignettes/log1pmx-etc.Rnw  <<<<<<<<<<<<<<<
+
+##-------- small lambda --- is  dpois_simpl0() good ?
+
+range(dpE40 <- dpoisEr(40.25, x=0:200))
+## -4.401959e-16  3.645529e-16
+
+## dpois_simpl0() uses "old" direct formula on original scale: factorial(x)
+stopifnot(factorial(170) < Inf,
+          factorial(171) == Inf)
+xS <- 0:170 # the full range of "sensible" x values for dpois_simpl0
+range(dpE40Sim <- dpoisEr(40.25, x=xS, dpoisFUN = dpois_simpl0))
+## -1.299950e-13  1.118291e-13
+p.dpoisEr(dpE40Sim)
+## --> very suprising: errors are *very* small  up to  x <= 49, then in in the order of 1e-13
+p.dpoisEr(dpE40Sim, ylim = c(-1,1)*4e-16)
+
+## zoom in --- integer x only:
+range(dpE40Sim2 <- dpoisEr(40.25, x=0:49, dpoisFUN = dpois_simpl0))
+## -2.889661e-16  2.076597e-16
+p.dpoisEr(dpE40Sim2) #   --- almost all in [-eps, +eps]
+
+## zoom in and use non-integer x:
+range(dpE40Sim2d <- dpoisEr(40.25, x=seq(0, 49, by=1/8), dpoisFUN = dpois_simpl0))
+## [1] -3.861877e-14  3.080750e-14  == Oops !  blown up to
+p.dpoisEr(dpE40Sim2d)
+
+})
+
+### MM: FIXME -- moved all this to an  Rmpfr  vignette:
+###
+" ~/R/D/R-forge/Rmpfr/pkg/vignettes/gamma-inaccuracy.Rnw "
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## and the R code actually to the R script:
+" ~/R/D/R-forge/Rmpfr/pkg/vignettes/gamma-inaccuracy_src/plot-factErr-def.R "
+
+##=======>  gamma(x) itself suffers from the fact that  exp(y) has a *large* relative error,
+##          -------- when  |y| ~ 100 or so, more specifically, the
+## relative error of   exp(y) =  |y| * {rel.err(y)} , since
+##   exp(((1+ eps)*y) = exp(y) * exp(eps*y) >=  exp(y) (1 + eps*y)  and indeed,
+## the inaccuracy of y (i.e. eps)  is blown up by a factor |y|  which is not small here!
+
+
 ## close to over-/underflow -------
 
 ### Large lambda == np == M -------
 
 if(do.pdf) { dev.off(); pdf("stirlerr-bd0-ebd0.pdf") }
-##-- FIXME: use functionality from ~/R/MM/NUMERICS/dpq-functions/15628-dpois_raw_accuracy.R
-##-- ----- *or* move to vignette
+
+##-- TODO ----- *or* move to vignette ---> ../vi???????????
 
 LL <- 1e20
 dput(x1 <- 1e20 - 2e11) # 9.99999998e+19
@@ -306,7 +327,7 @@ roundMpfr(range(yM), 12) ##  7.0363e+309 7.1739e+309 -- *are* larger than  DBL_M
 ### Now  *BOTH*  x and lambda are large : ---------------------------------------
 ## (FIXME?? Small loss for ebd0, see below) <<< ???
 ##  is bd0(<mpfr>, *) really accurate ???
-##  it uses it's own convergent series approxmation for |x-np| < .. ????
+##  it uses it's own convergent series approximation for |x-np| < .. ????
 
 x. <- 1e307
 ebd0(x., 10^(300:308))

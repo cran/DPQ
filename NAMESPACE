@@ -95,8 +95,10 @@ export(
   , lbeta_asy, lbetaI, lbetaM, lbetaMM
   ## , lbetaIhalf
   , algdiv # name as in TOMS 708 .. but really?
+  , bpser  # name as in TOMS 708
   , okLongDouble # as with valgrind, it does not work contrary to what .Machine says
 
+  , dpsifn # R/psigamma-deriv.R
   , lgamma1p., lgamma1p, lgamma1p_series
   , lgammacor
   , log1pmx
@@ -135,7 +137,10 @@ export(
 
   , dgamma.R
   , dpois_raw
-  , bd0, bd0C, stirlerr
+  , dpois_simpl
+  , dpois_simpl0 # << "experimental" respectively purely didactical
+  , bd0, bd0C
+  , stirlerr, stirlerr_simpl
   , bd0_p1l1d1, bd0_p1l1d, bd0_l1pm
   , ebd0, ebd0C
   , p1l1, p1l1., p1l1p, p1l1ser ## NB: p1l1p() via log1pmx()  is *very* good!

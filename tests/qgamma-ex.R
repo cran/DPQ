@@ -5,8 +5,8 @@ library(DPQ)
 ##  see /u/maechler/R/MM/NUMERICS/dpq-functions/beta-gamma-etc/qgamma-ex.R ..
 
 ## FIXME: Timing ! --- partly these matplot() partly get quite slow ~?
-source(system.file(package="Matrix", "test-tools-1.R", mustWork=TRUE))
-##--> showProc.time(), assertError(), relErrV(), ...
+source(system.file(package="DPQ", "test-tools.R", mustWork=TRUE))
+## => showProc.time(), ...  list_() , loadList() ,  readRDS_() , save2RDS()
 showProc.time()
 
 (doExtras <- DPQ:::doExtras())
@@ -355,8 +355,7 @@ showProc.time()
 ## Consider the two different implementations of
 ##  lgamma1p(a) := lgamma(1+a) == log(gamma(1+a) == log(a*gamma(a))  "stable":
 
-if(!exists("lseq", mode="function"))
-    lseq <- if(requireNamespace("sfsmisc"))  sfsmisc::lseq  else
+lseq <- if(requireNamespace("sfsmisc"))  sfsmisc::lseq  else
 	function(from, to, length) exp(seq(log(from), log(to), length.out = length))
 
 if(require("Rmpfr")) { ##---------------- MPFR numbers -------------------------
@@ -428,7 +427,7 @@ showProc.time()
 } ## if( MPFR ) ----------------------------------------------------------------
 
 
-## ../R/qchisqAppr.R -- talks about the "small shape" qgamma() approxmation
+## ../R/qchisqAppr.R -- talks about the "small shape" qgamma() approximation
 ## -----------------  --> .qgammaApprBnd() :
 curve(.qgammaApprBnd, 1e-18, 1e-15, col=2)
 abline(h=0, col="gray70", lty=2)

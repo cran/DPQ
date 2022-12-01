@@ -4,6 +4,43 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.5-3 (2022-12-01, svn r240)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item New \R functions \code{qntR()} and \code{qtU()},
+      \code{Vectorize()}d versions of \code{qntR1()} and \code{qtU1()},
+      respectively.
+
+      \item New \code{qtR() <- Vectorize(qntR1, *)}; pure \R
+      implementation of \R's Mathlib C-level \code{qt()}, but additionally
+      allowing tweaks, used for fixing \R's bug \PR{18630}.
+      Added (optional) log-scale Newton steps via \code{logNewton = log.p},
+      needing more tests.
+
+      \item New \code{qtNappr()} -- from the remark in R's \file{nmath/qt.c}
+      about very large \code{df} approximation, now with all 4 large-df terms
+      from Abramowitz & Stegun's (26.7.5).
+
+      \item New \code{gammaVer()} to exemplify \R's (partly historical) % ../man/gammaVer.Rd
+      versions of \code{gamma()} implementations.
+
+      \item New \code{qnormUappr6()}, % ../man/qnormUappr.Rd
+      providing the {6 coefficients}-approximation of A. & S. to \code{qnorm()}.
+
+      \item \code{qnormR()} gets new \code{version = "2022-08-04"} which
+      uses MM's newly derived asymptotic approximations to \code{qnorm()}.
+
+      \item New \code{qnormAsymp()} providing new asymptotic approximations
+      to \code{qnorm()}.
+
+      \item Added vignette \dQuote{Asymptotic Tail Formulas for Gaussian Quantiles}.
+
+      \item New \code{chebychevPoly()} (and auxiliaries) for evaluation
+      of Chebyshev polynomials.
+    }
+  }
+}
+
 \section{Version 0.5-2 (2022-06-08, svn r212)}{
   \subsection{NEW FEATURES}{
     \itemize{

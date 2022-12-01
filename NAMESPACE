@@ -20,6 +20,7 @@ importFrom("stats"
          , dhyper, phyper
          , dt, pt, qt
          , dpois, ppois, qpois
+         , uniroot
 )
 
 importFrom("graphics",
@@ -180,13 +181,22 @@ export(
   , qchisqN
   , qnchisqAbdelAty, qnchisqPatnaik, qnchisqPearson, qnchisqSankaran_d
 
+  , gammaVer # gamma() versions in C {of R itself; historical & experimental}
   , qgammaAppr, qgammaApprSmallP, qgammaApprKG
 
   , pnormL_LD10, pnormU_S53
   , pnormAsymp
+  , qnormAsymp
   , qnormAppr, qnormUappr
+  , qnormUappr6
   , qnormR, qnormR1
+  , qntR, qntR1
   , qtAppr
+  , qtNappr
+  , qtU, qtU1
+  , qtR, qtR1
   , r_pois, r_pois_expr
     ## no! titleR.exp (FIXME eventually: should not need such a global)
+
+  , chebyshevPoly, chebyshevEval, chebyshev_nc
 )

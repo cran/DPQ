@@ -4,6 +4,9 @@
 ## if(FALSE) ## 'include' this via
 ## source("/u/maechler/R/MM/NUMERICS/dpq-functions/dpq-h.R")
 
+## *Constants* such as M_PI  are in   ./AAA_consts.R
+##					~~~~~~~~~~~~
+
 .D_0 <- function(log.p) if(log.p) -Inf else 0
 .D_1 <- function(log.p) as.integer(!log.p) ## if(log.p) 0 else 1
 
@@ -26,15 +29,6 @@
 .D_Clog<- function(p, log.p)  if(log.p) log1p(-p) else ((0.5 - p) + 0.5)# [log](1-p)
 
 
-M_LN2 <- log(2) # 0.693147180559945309417232121458 # ln(2)
-M_SQRT2 <- sqrt(2)
-M_PI   <- pi   # 3.141592653589793238462643383280 # pi
-M_1_PI <- 1/pi # 0.318309886183790671537767526745 # 1/pi
-M_PI_2 <- pi/2 # 1.570796326794896619231321691640 # pi/2
-M_2PI  <- 2*pi # 6.283185307179586476925286766559 # 2*pi
-## (cannot use ldexp() , as dyn.load() has not happened at pkg build time)
-
-
 ##' log(1 - exp(-x))  in more stable form than log1p(- R_D_qIv(-x))
 ##' NB: copula::log1mexp() is slightly more sophisticated
 ##' NB2: Our R log1mexp(x) is equal to C levels's _Log1_Exp(-x)  {"-" minus sign !}
@@ -51,16 +45,16 @@ log1mexp <- function(x) ifelse(x <= M_LN2, log(-expm1(-x)), log1p(-exp(-x)))
     .D_val(.D_Cval(x, lower.tail), log.p) # 1 - x in pF
 
 ## .DT_qIv <- function(p)	.D_Lval(.D_qIv(p))	  #   p	 in qF !
-.DT_qIv <- function(p, lower.tail, log.p) {
-    if(log.p) if(lower.tail) exp(p) else - expm1(p)
-    else .D_Lval(p, lower.tail)
-}
+.DT_qIv <- function(p, lower.tail, log.p)
+    if(log.p) {
+        if(lower.tail) exp(p) else - expm1(p)
+    } else .D_Lval(p, lower.tail)
 
 ## .DT_CIv <- function(p)	.D_Cval(.D_qIv(p))	  #  1 - p in qF
-.DT_CIv <- function(p, lower.tail, log.p) {
-    if(log.p) if(lower.tail) -expm1(p) else exp(p)
-    else .D_Cval(p, lower.tail)
-}
+.DT_CIv <- function(p, lower.tail, log.p)
+    if(log.p) {
+        if(lower.tail) -expm1(p) else exp(p)
+    } else .D_Cval(p, lower.tail)
 
 .DT_exp  <- function(x, lower.tail, log.p)		# exp( x )
     .D_exp(.D_Lval(x, lower.tail), log.p)

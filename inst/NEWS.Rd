@@ -4,6 +4,39 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.5-4 (2023-04-12, svn r261)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item New \R function \code{qnormCappr()}.
+      \item New \R function \code{rexpm1()} from TOMS 708.
+      \item Provide also \code{qnormR(*, version = "1.0.x")} and \code{"1.0_noN"},
+      for history's sake.
+      \item New \R function \code{rlog1()} from TOMS 708.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{qnormUappr()} & \code{qnormUappr6()} were \emph{wrongly}
+      negative for lp in \eqn{[-.693147, 0)} (corresponding to \eqn{p > 1/2}).
+    }
+  }
+  \subsection{Misc}{
+    \itemize{
+      \item Tweaks to the \file{qnorm-asymp} vignette, related to the JSS submission.
+
+      \item \file{tests/pqnorm_extreme.R} plots more about the
+      \code{pnormAsymp()} relative errors.
+
+      \item Apple clang 14.0.3 needs looser tolerance for \code{logcf{R}()}
+      and \code{dbinom_raw()} comparisons.
+
+      \item Minimally document the \emph{internal} \code{.D_*()} and
+      \code{.DT_*()} utilities, as we provide them to experts and e.g.,
+      package \CRANpkg{DPQmpfr}.
+    }
+  }
+}
+
 \section{Version 0.5-3 (2022-12-01, svn r240)}{
   \subsection{NEW FEATURES}{
     \itemize{

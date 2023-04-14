@@ -189,12 +189,103 @@ lbetaIhalf <- function(a, n)
   stop("unfinished -- FIXME")
 }
 
-### pbeta()  --- is now used from TOM708 exclusively
+
+### pbeta()  --- is now used from TOMS 708 exclusively
 ### -------  ~/R/D/r-devel/R/src/nmath/toms708.c
 ###                                    ~~~~~~~~~
 
+## Provide TOMS 708 version of  expm1(), called REXP() in Fortran, then rexpm1() in our C code
+## Keeping name '*exmp1()' because, indeed, it should be close to expm1()
+##
+## EVALUATION OF THE FUNCTION EXP(X) - 1
+rexpm1 <- function(x)
+{
+    ## Vectorize in 'x' -- and work with NaN/NA
+    r <- x
+    notNA <- !is.na(x)
+    sml <- abs(x) <= 0.15
 
+    if(any(s <- sml & notNA))
+      r[s] <- # |x| <= 0.15
+        local({ x <- x[s]
+            ## minimax rational approximation, according to Didonato & Morris (1986)
+            ## "Computation of the Incomplete Gamma Function Ratios and their Inverse"
+            ## ACM Trans. on Math. Softw. 12, 377--393  // https://dl.acm.org/doi/10.1145/22721.23109
+            p1 = 9.14041914819518e-10;
+            p2 = .0238082361044469;
+            q1 = -.499999999085958;
+            q2 = .107141568980644;
+            q3 = -.0119041179760821;
+            q4 = 5.95130811860248e-4;
+            ##
+            x * (((p2 * x + p1) * x + 1.) /
+                 ((((q4 * x + q3) * x + q2) * x + q1) * x + 1.))
+        })
+    if(any(B <- !sml & notNA))
+      r[B] <- # |x| > 0.15
+        local({ x <- x[B]
+            w = exp(x)
+            ## ifelse(x > 0,
+            ##        w * (0.5 - 1./w + 0.5),
+            ##        w - 0.5 - 0.5)
+            if(any(p <- x > 0))
+                w[p] <- w[p] * (0.5 - 1/w[p] + 0.5)
+            if(any(n <- !p)) # n = (x <= 0)
+                w[n] <- (w[n] - 0.5) - 0.5
+            w
+        })
+    r
+} # rexpm1
 
+## Provide TOMS 708 version of  rlog1(), called RLOG1() in Fortran
+##
+rlog1 <- function(x)
+{
+## /* -----------------------------------------------------------------------
+##  *             Evaluation of the function  x - ln(1 + x)
+##  *                                        ~=~ - log1pmx(x)  in ./pgamma.c
+##  * ----------------------------------------------------------------------- */
+    ## Vectorize in 'x' -- and work with NaN/NA
+    r <- x
+    notNA <- !is.na(x)
+    sml <- -0.39 <= x & x < 0.57 # x inside [-0.39, 0.57)
+    if(any(s <- sml & notNA))
+      r[s] <- # x in [-0.39, 0.57)
+        local({ x <- x[s]
+            ## only for "mid": |x| <= 0.18 ; Argument Reduction
+            h <- x
+            w1 <- rep(0, length(x))
+            if (any(L <- x < -0.18)) { ## "Left": x in [-0.39, -0.18)  ("L10")
+                h[L] <- h. <- (x[L] + .3) / .7
+                a = .0566749439387324
+                w1[L] <- a - h. * .3
+            }
+            if (any(R <- x > 0.18)) { ## "Right": x in (0.18, 0.57) ("L20")
+                h[R] <- h. <- x[R] * .75 - .25
+                b = .0456512608815524
+                w1[R] <- b + h. / 3.
+            }
+            ##  L30: "Series Expansion" i.e., rational approximation
+            r = h / (h + 2.)
+            t = r * r
+
+            p0 = .333333333333333;
+            p1 = -.224696413112536;
+            p2 = .00620886815375787;
+            q1 = -1.27408923933623;
+            q2 = .354508718369557;
+            w <- ((p2 * t + p1) * t + p0) / ((q2 * t + q1) * t + 1.)
+
+            t * 2 * (1/(1 - r) - r * w) + w1
+        })
+
+    if(any(B <- !sml & notNA))
+      r[B] <- { #  direct evaluation: x - log(1+x)
+        x <- x[B]
+        x - log((x + 0.5) + 0.5)
+      }
+    r
+} ## rlog1
 
 
 
@@ -427,10 +518,12 @@ logcf <- function (x, i, d, eps, trace = FALSE) {
 }
 
 ## Accurate calculation of log(1+x)-x, particularly for small x.
-## See also R-interface to R's C API [src/nmath/pgamma.c] log1pmx()  --> log1pmxC() in >> ./utils.R
-## NB: minL1 was hard-wired 'minLog1Value'  in R's source of log1pmx()
-log1pmx <- function(x, tol_logcf = 1e-14, eps2 = 0.01,
-                    minL1 = -0.79149064, trace.lcf = FALSE,
+## See also R-interface to R's C API [src/nmath/pgamma.c] log1pmx()
+##     --> log1pmxC() in >> ./utils.R >> ../src/DPQ-misc.c
+log1pmx <- function(x, tol_logcf = 1e-14,
+                    eps2 = 0.01,
+                    minL1 = -0.79149064, ## << was hard-wired 'minLog1Value' in R's source of log1pmx()
+                    trace.lcf = FALSE,
                     logCF = if(is.numeric(x)) logcf else logcfR.)
 {
     stopifnot(is.numeric(eps2), eps2 >= 0, is.numeric(minL1), -1 <= minL1, minL1 < 0)# < -1/4 ?
@@ -638,6 +731,7 @@ qnormAppr <- function(p) {
   ## -- to be used in  qbeta(.)
   ## The relative error of this approximation is quite ASYMMETRIC: mainly < 0
   ## NB:  This is Abramowitz & Stegun 26.2.22
+    .Deprecated("qnormUappr")
   a0 <- 2.30753
   a1 <- 0.27061
   b1 <- 0.99229
@@ -649,21 +743,21 @@ qnormAppr <- function(p) {
 qnormUappr <- function(p,
                        lp = .DT_Clog(p, lower.tail=lower.tail, log.p=log.p),
                                         # ~= log(1-p) -- independent of lower.tail, log.p
-                       lower.tail=FALSE, log.p=FALSE, tLarge = 1e10)
+                       lower.tail=FALSE, log.p = missing(p), tLarge = 1e10)
 {
     ## qnorm: normal quantile approximation;
     ## -- to be used in  qbeta(.)
     ## The relative error of this approximation is quite ASYMMETRIC: mainly < 0
-    ## NB:  This is Abramowitz & Stegun 26.2.22
+    ## NB:  This is Abramowitz & Stegun 26.2.22; improved with swapping etc
     a0 <- 2.30753
     a1 <- 0.27061
     b1 <- 0.99229
     b2 <- 0.04481
 
-    if(missing(p)) { ## log.p unused;  lp = log(1-p)  <==>  e^lp = 1-p  <==>  p = 1 - e^lp
+    if(use.lp <- missing(p)) { ## log.p unused;  lp = log(1-p)  <==>  e^lp = 1-p  <==>  p = 1 - e^lp
+        if(lower.tail) stop("lower.tail=TRUE not allowed when p is not specified, but lp is")
         p. <- -expm1(lp)
-        ## swap p <--> 1-p -- so we are where approximation is better
-        swap <- if(lower.tail) p. < 1/2 else p. > 1/2 # logical vector
+        ## swap <- TRUE -- will swap *all* below
     } else {
         p. <- .D_qIv(p, log.p)
         ## swap p <--> 1-p -- so we are where approximation is better
@@ -675,7 +769,7 @@ qnormUappr <- function(p,
     ## for t >= tLarge:  R = t numerically in formula below
     t <- t[t.ok]
     R[t.ok] <- t - (a0 + a1 * t) / (1 + (b1 + b2 * t) * t)
-    R[swap] <- -R[swap]
+    if(use.lp) R <- -R else R[swap] <- -R[swap]
     R[p. == 1/2] <- 0
     R
 }
@@ -683,7 +777,7 @@ qnormUappr <- function(p,
 qnormUappr6 <- function(p,
                         lp = .DT_Clog(p, lower.tail=lower.tail, log.p=log.p),
                                         # ~= log(1-p) -- independent of lower.tail, log.p
-                        lower.tail=FALSE, log.p=FALSE, tLarge = 1e10)
+                        lower.tail=FALSE, log.p = missing(p), tLarge = 1e10)
 {
     ## qnorm: normal quantile approximation;
     ## ....
@@ -693,10 +787,10 @@ qnormUappr6 <- function(p,
     c1 <-  .802853;  d2 <-  .189269
     c2 <-  .010328;  d3 <-  .001308
 
-    if(missing(p)) { ## log.p unused;  lp = log(1-p)  <==>  e^lp = 1-p  <==>  p = 1 - e^lp
+    if(use.lp <- missing(p)) { ## log.p unused;  lp = log(1-p)  <==>  e^lp = 1-p  <==>  p = 1 - e^lp
+        if(lower.tail) stop("lower.tail=TRUE not allowed when p is not specified, but lp is")
         p. <- -expm1(lp)
-        ## swap p <--> 1-p -- so we are where approximation is better
-        swap <- if(lower.tail) p. < 1/2 else p. > 1/2 # logical vector
+        ## swap <- TRUE -- will swap *all* below
     } else {
         p. <- .D_qIv(p, log.p)
         ## swap p <--> 1-p -- so we are where approximation is better
@@ -709,7 +803,7 @@ qnormUappr6 <- function(p,
     ## for t >= tLarge:  R = t numerically in formula below
     t <- t[t.ok]
     R[t.ok] <- t - (c0 + (c1 + c2*t) * t) / (1 + (d1 + (d2 + d3*t) * t) * t)
-    R[swap] <- -R[swap]
+    if(use.lp) R <- -R else R[swap] <- -R[swap]
     R[p. == 1/2] <- 0
     R
 }

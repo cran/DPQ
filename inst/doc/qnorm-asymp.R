@@ -33,6 +33,7 @@ require("DPQ") # -->  qnormR():
 qnrm    <- qnorm (-s, lower.tail=FALSE, log.p=TRUE)
 qnrm405 <- qnormR(-s, lower.tail=FALSE, log.p=TRUE, version= "4.0.x") # R <= 4.0.5
 qnrm410 <- qnormR(-s, lower.tail=FALSE, log.p=TRUE, version= "2020-10-17")
+qnrm43  <- qnormR(-s, lower.tail=FALSE, log.p=TRUE, version= "2022")
 Rver <- sfsmisc::shortRversion()
 if(getRversion() <= "4.0.5") { # our qnormR(.., version="4.0.x")
     cat(sprintf("%s, \"4.0.5\",\n   all.equal(*, tol=0): %s;  identical(): %s\n", Rver,
@@ -43,7 +44,6 @@ if(getRversion() <= "4.0.5") { # our qnormR(.., version="4.0.x")
                 all.equal(qnrm, qnrm410, tolerance=0), identical(qnrm, qnrm410)))
     stopifnot(all.equal(qnrm, qnrm410, tolerance = 1e-12))
 } else { # R version >= 4.3.x
-    qnrm43 <- qnormR(-s, lower.tail=FALSE, log.p=TRUE, version = "2022")
     cat(sprintf("%s, >= 4.3.x,\n   all.equal(*, tol=0): %s;  identical(): %s\n", Rver,
                 all.equal(qnrm, qnrm43, tolerance=0), identical(qnrm, qnrm43)))
     rE6 <- qnorm(-1e6, log.p=TRUE)/-1414.2077829910174  - 1
@@ -93,11 +93,16 @@ legend("top", c("qnorm(-s, lower.tail=FALSE, log.p=TRUE)", "true"),
 
 
 ###################################################
-### code chunk number 7: p-relErr0 (eval = FALSE)
+### code chunk number 7: ablaxis1
+###################################################
+ablaxis1 <- function(x) { abline(v = x^2, col=4, lty=2)
+    axis(1, at=x^2, labels = substitute(X^2, list(X=x)), col=4, col.axis=4, line=-.61, cex.axis=0.75) }
+
+
+###################################################
+### code chunk number 8: p-relErr0 (eval = FALSE)
 ###################################################
 ## if(!exists("version.txt"))  version.txt <- R.version.string
-## ablaxis1 <- function(x) { abline(v = x^2, col=4, lty=2)
-##     axis(1, at=x^2, labels = substitute(X^2, list(X=x)), col=4, col.axis=4, line=-.61, cex=0.25) }
 ## plot(abs(relE_qn) ~ s, type="l", log="xy",
 ##      main = "inaccuracy of qnorm(-s, log.p=TRUE, lower.tail=F)", axes=FALSE)
 ## eaxis(1, nintLog = 13, sub10 = 2); eaxis(2); ablaxis1(x=27)
@@ -105,12 +110,10 @@ legend("top", c("qnorm(-s, lower.tail=FALSE, log.p=TRUE)", "true"),
 
 
 ###################################################
-### code chunk number 8: p-relErr (eval = FALSE)
+### code chunk number 9: p-relErr (eval = FALSE)
 ###################################################
 ## par(mar = c(3.6, 3.8, 1, .1), mgp = c(2.5, .75, 0))
 ## if(!exists("version.txt"))  version.txt <- R.version.string
-## ablaxis1 <- function(x) { abline(v = x^2, col=4, lty=2)
-##     axis(1, at=x^2, labels = substitute(X^2, list(X=x)), col=4, col.axis=4, line=-.61, cex=0.25) }
 ## plot(abs(relE_qn) ~ s, type="l", log="xy",
 ##      main = "inaccuracy of qnorm(-s, log.p=TRUE, lower.tail=F)", axes=FALSE)
 ## eaxis(1, nintLog = 13, sub10 = 2); eaxis(2); ablaxis1(x=27)
@@ -118,18 +121,16 @@ legend("top", c("qnorm(-s, lower.tail=FALSE, log.p=TRUE)", "true"),
 
 
 ###################################################
-### code chunk number 9: relE405
+### code chunk number 10: relE405
 ###################################################
 relE_qn <- relErrV(qs, qnrm405) ; version.txt <- "R versions up to R 4.0.5"
 
 
 ###################################################
-### code chunk number 10: do-p-relE405
+### code chunk number 11: do-p-relE405
 ###################################################
 par(mar = c(3.6, 3.8, 1, .1), mgp = c(2.5, .75, 0))
 if(!exists("version.txt"))  version.txt <- R.version.string
-ablaxis1 <- function(x) { abline(v = x^2, col=4, lty=2)
-    axis(1, at=x^2, labels = substitute(X^2, list(X=x)), col=4, col.axis=4, line=-.61, cex=0.25) }
 plot(abs(relE_qn) ~ s, type="l", log="xy",
      main = "inaccuracy of qnorm(-s, log.p=TRUE, lower.tail=F)", axes=FALSE)
 eaxis(1, nintLog = 13, sub10 = 2); eaxis(2); ablaxis1(x=27)
@@ -137,7 +138,7 @@ mtext(version.txt, line = -0.8, cex=.8, adj = 0.75)
 
 
 ###################################################
-### code chunk number 11: delta-relE
+### code chunk number 12: delta-relE
 ###################################################
 delta.relE <- function(q, qNorm = function(...) qnormR(..., version = "4.0.x")) {
   lp <- pnorm(q, lower.tail=FALSE, log.p=TRUE) # <==>  q = true qnorm(lp, *)
@@ -150,14 +151,14 @@ abline(h=0, col = adjustcolor(2, 1/2))
 
 
 ###################################################
-### code chunk number 12: root-delta-raw
+### code chunk number 13: root-delta-raw
 ###################################################
 cutP. <- uniroot(function(logq) delta.relE(exp(logq)) , c(3, 13))
 exp(cutP.$root)
 
 
 ###################################################
-### code chunk number 13: root-delta-fine
+### code chunk number 14: root-delta-fine
 ###################################################
 str(cP. <- uniroot(delta.relE, interval = c(1000, 1300), tol = 1e-12))
 qC <- cP.$root # 1153.242
@@ -165,18 +166,16 @@ qC <- cP.$root # 1153.242
 
 
 ###################################################
-### code chunk number 14: relE410
+### code chunk number 15: relE410
 ###################################################
 relE_qn <- relErrV(qs, qnrm410); version.txt <- "R 4.1.0 to 4.2.x"
 
 
 ###################################################
-### code chunk number 15: do-p-relE410
+### code chunk number 16: do-p-relE410
 ###################################################
 par(mar = c(3.6, 3.8, 1, .1), mgp = c(2.5, .75, 0))
 if(!exists("version.txt"))  version.txt <- R.version.string
-ablaxis1 <- function(x) { abline(v = x^2, col=4, lty=2)
-    axis(1, at=x^2, labels = substitute(X^2, list(X=x)), col=4, col.axis=4, line=-.61, cex=0.25) }
 plot(abs(relE_qn) ~ s, type="l", log="xy",
      main = "inaccuracy of qnorm(-s, log.p=TRUE, lower.tail=F)", axes=FALSE)
 eaxis(1, nintLog = 13, sub10 = 2); eaxis(2); ablaxis1(x=27)
@@ -185,7 +184,7 @@ ablaxis1(x=816)
 
 
 ###################################################
-### code chunk number 16: qnormAsymp
+### code chunk number 17: qnormAsymp
 ###################################################
 k.s <- 0:5; nks <- paste0("k=", k.s)
 qnAsym <- sapply(setNames(k.s, nks), function(k) qnormAsymp(lp=lp, order = k))
@@ -193,7 +192,7 @@ relEasym <- apply(qnAsym, 2, relErrV, target = qs) # rel.errors for all
 
 
 ###################################################
-### code chunk number 17: p-qnormAsymp (eval = FALSE)
+### code chunk number 18: p-qnormAsymp (eval = FALSE)
 ###################################################
 ## matplot(-lp, abs(relEasym), log="xy", type="l", lwd=2, axes=FALSE, xlab = quote(s == -lp))
 ## eaxis(1, sub10=2); eaxis(2, sub10=c(-2,2), nintLog=16); grid(col="gray75")
@@ -201,7 +200,7 @@ relEasym <- apply(qnAsym, 2, relErrV, target = qs) # rel.errors for all
 
 
 ###################################################
-### code chunk number 18: do-qnormAsymp
+### code chunk number 19: do-qnormAsymp
 ###################################################
 par(mar = c(3.5, 3.8, 0, .1), mgp = c(2.5, .75, 0))
 matplot(-lp, abs(relEasym), log="xy", type="l", lwd=2, axes=FALSE, xlab = quote(s == -lp))
@@ -210,7 +209,7 @@ legend("right", nks, col=1:6, lty=1:5, lwd=2, bty="n")
 
 
 ###################################################
-### code chunk number 19: qnormAsymp-zoom (eval = FALSE)
+### code chunk number 20: qnormAsymp-zoom (eval = FALSE)
 ###################################################
 ## matplot(-lp, abs(relEasym), log="xy", type="l", lwd=2, axes=FALSE, xlab = quote(s == -lp),
 ##         xlim = c(40, 1e9), ylim = 10^c(-16, -3))
@@ -219,7 +218,7 @@ legend("right", nks, col=1:6, lty=1:5, lwd=2, bty="n")
 
 
 ###################################################
-### code chunk number 20: do-qnAsy-zoom
+### code chunk number 21: do-qnAsy-zoom
 ###################################################
 par(mar = c(3.5, 3.8, 0, .1), mgp = c(2.5, .75, 0))
 matplot(-lp, abs(relEasym), log="xy", type="l", lwd=2, axes=FALSE, xlab = quote(s == -lp),
@@ -229,19 +228,76 @@ legend(4e7, 1e-9, nks, col=1:6, lty=1:5, lwd=2, bty="n")#, cex=.75, bg=adjustcol
 
 
 ###################################################
-### code chunk number 21: sessionInfo
+### code chunk number 22: p-relE-x5-zoom
+###################################################
+absE <- function(e) pmax(abs(e), 2^-54) # = 1/4 eps_c
+local({ # larger range for s -- qnorm-extreme-bad.R.~1~ (Sep 25, 2020):
+  qs <- seq(27, 40, by=1/256)
+  lp <- pnorm(qs, lower.tail=FALSE, log.p=TRUE)
+  s <- -lp # = -pnorm(..) = -log(1 - Phi(qs)) > 0
+  qnrm43  <- qnormR(-s, lower.tail=FALSE, log.p=TRUE, version= "2022")
+  relEq43 <- relErrV(qs, qnrm43)
+par(mar = c(3.6, 3.8, 1, .1), mgp = c(2.5, .75, 0))
+  par(mar=c(2, par("mar")[-1]))
+  plot(absE(relEq43) ~ s, type="l", log="xy", ylim = 10^c(-16.3,-15.05), col=adjustcolor(1, 1/2), axes=FALSE)
+  qnAsym5 <- qnormAsymp(lp=lp, order = 5)
+  relE5 <- relErrV(qs, qnAsym5)
+  lines(absE(relE5) ~ s, col=adjustcolor(2, 1/2),  lwd = 2)
+  ## smoothing "discrete" relative errors:
+  lines(smooth.spline(s, abs(relEq43)), col=adjustcolor(1, 2/3), lwd=4, lty="6132")
+  lines(smooth.spline(s, abs(relE5)  ), col=adjustcolor(2, 2/3), lwd=4, lty="72")
+  ## nice axes etc
+  axis(1, at=c(17,19,20)^2)
+  eaxis(1, nintLog = 16, sub10 = 2); eaxis(2); ablaxis1(27)
+  r. <- c(17,19:23,25,27, 30, 35, 40) ;        ablaxis1(21.5); ablaxis1(22.8)
+  axis(3, at=r.^2, label=r., col=4, col.axis=4, line=-.5, cex.axis=.75)
+  axis(3, at=19.5^2, label=quote(r == {}), col=4, col.axis=4, col.ticks=NA, cex.axis=1.4, line=-.5)
+  if(FALSE) {## visually inspect "table" values
+    cbind(qs,  r = sqrt(s), s, relE5, relEq43)[21^2 <= s & s <= 27^2, ]
+   cbind(qs, r=sqrt(s), s)[ which(abs(relE5) > 0),]  # very last one is r = 23.9081
+  }
+})
+
+
+###################################################
+### code chunk number 23: relE43
+###################################################
+relE_qn <- relErrV(qs, qnrm43)
+
+
+###################################################
+### code chunk number 24: relE43-tab
+###################################################
+table(2^52 * relE_qn)           # all in [-2.5, 3]
+table(2^52 * relE_qn[s > 27^2]) #     in [-1,   1]
+
+
+###################################################
+### code chunk number 25: do-p-relE43 (eval = FALSE)
+###################################################
+## version.txt <- "R > 4.2.x (after 2022)"
+## par(mar = c(3.6, 3.8, 1, .1), mgp = c(2.5, .75, 0))
+## if(!exists("version.txt"))  version.txt <- R.version.string
+## plot(abs(relE_qn) ~ s, type="l", log="xy",
+##      main = "inaccuracy of qnorm(-s, log.p=TRUE, lower.tail=F)", axes=FALSE)
+## eaxis(1, nintLog = 13, sub10 = 2); eaxis(2); ablaxis1(x=27)
+## mtext(version.txt, line = -0.8, cex=.8, adj = 0.75)
+
+
+###################################################
+### code chunk number 26: sessionInfo
 ###################################################
 toLatex(sessionInfo(), locale=FALSE)
 
 
 ###################################################
-### code chunk number 22: DPQ-version
+### code chunk number 27: DPQ-version
 ###################################################
 unlist(packageDescription("DPQ")[c("Package", "Version", "Date")])
 
 
 ###################################################
-### code chunk number 23: relErrV-def
+### code chunk number 28: relErrV-def
 ###################################################
 ## Componentwise aka "Vectorized" relative error:
 ## Must not be NA/NaN unless one of the components is  ==> deal with {0, Inf, NA}
@@ -281,14 +337,14 @@ relErrV <- function(target, current, eps0 = .Machine$double.xmin) {
 
 
 ###################################################
-### code chunk number 24: def-r-cutoffs
+### code chunk number 29: def-r-cutoffs
 ###################################################
 r0 <- c(27, 55, 109, 840, 36000, 6.4e8) # <-- cutoffs  <--> in ../R/norm_f.R
 # use k =  5   4    3    2      1       0    e.g.  k = 0  good for r >= 6.4e8
 
 
 ###################################################
-### code chunk number 25: do-p.qnormAsy2 (eval = FALSE)
+### code chunk number 30: do-p.qnormAsy2 (eval = FALSE)
 ###################################################
 ## r0 <- c(27, 55, 109, 840, 36000, 6.4e8) # <-- cutoffs  <--> in ../R/norm_f.R
 ## # use k =  5   4    3    2      1       0    e.g.  k = 0  good for r >= 6.4e8
@@ -300,7 +356,7 @@ r0 <- c(27, 55, 109, 840, 36000, 6.4e8) # <-- cutoffs  <--> in ../R/norm_f.R
 
 
 ###################################################
-### code chunk number 26: p.qnormAsy2-def
+### code chunk number 31: p.qnormAsy2-def
 ###################################################
 ## Zoom into each each cut-point region :
 p.qnormAsy2 <- function(r0, k, # use k-1 and k in region around r0
@@ -344,7 +400,7 @@ p.qnormAsy2 <- function(r0, k, # use k-1 and k in region around r0
 
 
 ###################################################
-### code chunk number 27: plot-qnormAsy2
+### code chunk number 32: plot-qnormAsy2
 ###################################################
 sfsmisc::mult.fig(5, main = "qnormAsymp(*, k) approximations in the 5 cutpoint regions")
 r0 <- c(27, 55, 109, 840, 36000, 6.4e8) # <-- cutoffs  <--> in ../R/norm_f.R
@@ -354,7 +410,7 @@ for(ir in 2:length(r0))
 
 
 ###################################################
-### code chunk number 28: finalizing
+### code chunk number 33: finalizing
 ###################################################
 options(op.orig)
 

@@ -37,9 +37,8 @@ importFrom("utils"
 
 ### ----------------------- Exporting ----------------------------
 
-## For now export everything (but the C_*() C routines
 export(
-    ## R/dpq-h.R
+    ## R/dpq-h.R: provide for experts:
     ## ---------
     ".D_0", ".D_1"
   , ".D_Clog", ".D_Cval", ".D_exp"
@@ -187,8 +186,9 @@ export(
   , pnormL_LD10, pnormU_S53
   , pnormAsymp
   , qnormAsymp
-  , qnormAppr, qnormUappr
-  , qnormUappr6
+  , qnormAppr # deprecated!
+  , qnormCappr
+  , qnormUappr, qnormUappr6
   , qnormR, qnormR1
   , qntR, qntR1
   , qtAppr
@@ -197,6 +197,8 @@ export(
   , qtR, qtR1
   , r_pois, r_pois_expr
     ## no! titleR.exp (FIXME eventually: should not need such a global)
+  , rexpm1
+  , rlog1
 
   , chebyshevPoly, chebyshevEval, chebyshev_nc
 )

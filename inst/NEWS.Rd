@@ -4,6 +4,22 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.5-5 (2023-06-23, svn r264)}{
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{qbinomR(p, *)}, \code{qnbinomR(p, *)}, and \code{qpoisR(p, *)}:
+      Fix \code{R_Q_P01_boundaries(p, ..)} for trivial boundaries, e.g.,
+      \eqn{p \in \{0,1\}} for \code{log.p=FALSE}.
+    }
+  }
+  \subsection{Misc}{
+    \itemize{
+      \item A new \command{flang} Fortran compiler does not know outdated
+      \code{derfc()}, but needs current standard \code{erfc()}.
+    }
+  }
+}
+
 \section{Version 0.5-4 (2023-04-12, svn r261)}{
   \subsection{NEW FEATURES}{
     \itemize{

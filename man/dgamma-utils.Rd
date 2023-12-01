@@ -114,17 +114,6 @@ lgammacor(x, nalgm = 5, xbig = 2^26.5)% --> ../R/utils.R <-> ../src/lgammacor.c
     default, \eqn{2^{26.5} = 94906265.6}, is the value hard wired in \R's C
     Mathlib.}
 }
-\value{
-  a numeric vector \dQuote{like} \code{x}; in some cases may also be an
-  (high accuracy) "mpfr"-number vector, using CRAN package \CRANpkg{Rmpfr}.
-
-  \code{lgammacor(x)} originally returned \code{NaN} for all \eqn{|x| < 10},
-  as its Chebyshev polynomial approximation has been constructed for
-  \eqn{x \in [10, xbig]}{x in [10, xbig]},
-  specifically for \eqn{u \in [-1,1]} where
-  \eqn{t := 10/x \in [1/x_B, 1]}  and
-  \eqn{u := 2t^2 -1 \in [-1 + \epsilon_B, 1]}.
-}
 \details{
   \describe{% >> Now, most of this and more is in vignette
 	    % ../vignettes/log1pmx-etc.Rnw   <<<<<<<<<
@@ -156,6 +145,25 @@ lgammacor(x, nalgm = 5, xbig = 2^26.5)% --> ../R/utils.R <-> ../src/lgammacor.c
       \code{M} are arbitrary-accurate mpfr-numbers (package \CRANpkg{Rmpfr}).
     }% item
   }% describe
+}
+\value{
+  a numeric vector \dQuote{like} \code{x}; in some cases may also be an
+  (high accuracy) "mpfr"-number vector, using CRAN package \CRANpkg{Rmpfr}.
+
+  \code{ebd0()} (\R code) and \code{ebd0C()} (interface to \command{C}
+  code) are \emph{experimental}, meant to be precision-extended version of
+  \code{bd0()}, returning \code{(yh, yl)} (high- and low-part of \code{y},
+  the numeric result).  In order to work for \emph{long} vectors \code{x},
+  \code{yh, yl} need to be \code{\link{list}} components; hence we return a
+  two-column \code{\link{data.frame}} with column names \code{"yh"} and
+  \code{"yl"}.
+
+  \code{lgammacor(x)} originally returned \code{NaN} for all \eqn{|x| < 10},
+  as its Chebyshev polynomial approximation has been constructed for
+  \eqn{x \in [10, xbig]}{x in [10, xbig]},
+  specifically for \eqn{u \in [-1,1]} where
+  \eqn{t := 10/x \in [1/x_B, 1]}  and
+  \eqn{u := 2t^2 -1 \in [-1 + \epsilon_B, 1]}.
 }
 \references{
   C. Loader (2000), see \code{\link{dbinom}}'s documentation.
@@ -197,7 +205,7 @@ str(log1pmx) ##--> play with  { tol_logcf, eps2, minL1, trace.lcf, logCF }
 ebd0x1k <- ebd0 (x, 1000)
 exC     <- ebd0C(x, 1000)
 stopifnot(all.equal(exC, ebd0x1k, tol=4e-16))
-lines(x, colSums(ebd0x1k), col=adjustcolor(4, 1/2), lwd=4)
+lines(x, rowSums(ebd0x1k), col=adjustcolor(4, 1/2), lwd=4)
 
 x <- 0:250
 dp   <- dpois    (x, 48, log=TRUE)# R's 'stats' pkg function

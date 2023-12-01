@@ -152,14 +152,14 @@ dpois_raw <- function(x, lambda, log=FALSE,
                                               trace.lcf=trace.lcf, logCF=logCF),
                             "ebd0_C1" = ebd0C(x, lambda, verbose=verb1),
                             stop("internal version error:", version))
-               yl <- yM["yl",] + del.x
+               yl <- yM[["yl"]] + del.x
                ## return
                if(log) ## "FIXME" ifelse() is inefficient (and fails for MPFR!)
-                   -yl - yM["yh",] - ifelse(BL,
+                   -yl - yM[["yh"]] - ifelse(BL,
                                             0.5 * (log(2*pi)+log(x)),
                                             0.5 * log(2*pi*x))
                else
-                   exp(-yl) * exp(-yM["yh",]) / ifelse(BL, sqrt(2*pi)*sqrt(x), sqrt(2*pi*x))
+                   exp(-yl) * exp(-yM[["yh"]]) / ifelse(BL, sqrt(2*pi)*sqrt(x), sqrt(2*pi*x))
            },
            stop("invalid 'version'": version))
     }
@@ -292,7 +292,7 @@ bd0C <- function(x, np,
 }
 
 ebd0C <- function(x, M, verbose = getOption("verbose"))
-    .Call(C_dpq_ebd0, x, M, verbose)# >> ../src/bd0.c
+    data.frame(.Call(C_dpq_ebd0, x, M, verbose))# >> ../src/bd0.c  {now returns *list* {case of __long__ vectors}}
 
 
 
@@ -654,13 +654,18 @@ ebd0.1 <- function(x, M, verbose, ...) # return  c(yh, yl)
     ADD1(-M * fg);
     if(verbose) cat(sprintf(" 4. after ADD1(- M*fg):       yl,yh = (%13g, %13g); yl+yh= %g\n\n",
                             yl, yh, (yl)+(yh)))
-    c(yh=yh, yl=yl)
+    c(yh, yl) # was c(yh=yh, yl=yl)
 } ## end{ ebd0.1() }
 
 ##' The vectorized version we export (and document)
-ebd0 <- function(x, M, verbose = getOption("verbose"), ...)
-    Vectorize(ebd0.1, vectorize.args = c("x", "M"))(x, M=M, verbose=verbose, ...)
-
+ebd0 <- function(x, M, verbose = getOption("verbose"), ...) {
+    ##                     n list()s of length 2 <<---  vvvvvvvvvvvvvvvv {for when length(x) > max.int}
+    r <- Vectorize(ebd0.1, vectorize.args = c("x", "M"), SIMPLIFY = FALSE)(x, M=M, verbose=verbose, ...)
+    ##             ^^^^^^
+    n..1 <- numeric(1L)
+    data.frame(yh = vapply(r, `[`, n..1, 1L),
+               yl = vapply(r, `[`, n..1, 2L))
+}
 
 ## #undef ADD1
 

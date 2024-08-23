@@ -48,6 +48,8 @@ static const R_CMethodDef CEntries[] = {
 static R_CallMethodDef CallEntries[] = {
     CALLDEF(R_algdiv,   2), // <-- ./algdiv.c
     CALLDEF(R_bpser,    7), // <-- ./bpser.c
+    CALLDEF(R_gam1,   3), //		"
+    CALLDEF(R_gamln1, 2), //		"
 
     CALLDEF(chk_LDouble,3), // <-- ./ppois-direct.c
     CALLDEF(ppoisD,     4), // <-- ./ppois-direct.c
@@ -60,14 +62,17 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(R_frexp, 1),
     CALLDEF(R_ldexp, 2),
     CALLDEF(R_modf, 1),
-    CALLDEF(R_logcf, 5),     // <--> logcf.c
-    CALLDEF(R_lgammacor, 3), // <--> lgammacor.c
+    CALLDEF(dpq_pow, 2),
+    CALLDEF(dpq_pow_di, 2),
+    CALLDEF(R_dpq_stirlerr, 2),// <--> stirlerr.c
+    CALLDEF(R_logcf, 5),       // <--> logcf.c
+    CALLDEF(R_lgammacor, 3),   // <--> lgammacor.c
     CALLDEF(R_chebyshev_eval, 3), // <--> chebyshev.c
     CALLDEF(R_chebyshev_nt,   2), // <-->    "
     CALLDEF(dpq_bd0, 6),     // <--> bd0.c
     CALLDEF(dpq_ebd0, 3),    //  "    "
     CALLDEF(R_dpsifn, 4),    // <--> dpsifn.c
-    CALLDEF(R_gamma_ver, 3), // <--> gamma-variants.c
+    CALLDEF(R_gamma_ver, 4), // <--> gamma-variants.c
 
     {NULL, NULL, 0}
 };

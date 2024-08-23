@@ -181,6 +181,12 @@
 */
 typedef int logical;
 
+typedef enum { // must be kept in sync with R-level gammaVer() -->  ../R/qgamma-fn.R  <---
+    R_3   = 1  /* "always" till in R <= 4.3.z */
+  , R_3_1 = 2  /* "R4..1" == R_3, just using lgamma1p() */
+  , R_4_4 = 3  /* "R4.4_0" using 10 cutoffs */
+} stirlerr_version_t;
+
 
 // qchisq_appr.c : -------------------------------------------------------------
 
@@ -235,24 +241,27 @@ int F77_NAME(noncechi)(int *variant,
 		       double *argument, double *noncentr, double *df, double *p,
 		       int *ifault);
 
-
 // algdiv.c: --------------------------------------------------------------------
 
 double algdiv(double a, double b);
 // .Call()ed :
-SEXP R_algdiv(SEXP a_, SEXP b_)
-    ;
+SEXP R_algdiv(SEXP a_, SEXP b_) ;
 
 // bpser.c: --------------------------------------------------------------------
 
-double gam1(double a); //  1/gamma(a+1) - 1    for -0.5 <= a <= 1.5
-double gamln1(double a);// log(gamma(1 + a))   for -0.2 <= a <= 1.25
+/**  1/gamma(a+1) - 1   for -0.5 <= a <= 1.5 ;  warn if a is outside */
+double gam1(double a, Rboolean warn_if, Rboolean verbose);
+
+/** log(gamma(1 + a))   for -0.2 <= a <= 1.25 ;  warn if a is outside */
+double gamln1(double a, Rboolean warn_if);
 
 double bpser(double a, double b, double x, double eps, int *err_bp, int log_p, Rboolean verbose);
+
 // .Call()ed :
 SEXP R_bpser(SEXP a_, SEXP b_, SEXP x_, SEXP eps_, SEXP log_p_, SEXP verbose_, SEXP warn_)
     ;
-
+SEXP R_gam1  (SEXP a_, SEXP warn_if_, SEXP verbose_);
+SEXP R_gamln1(SEXP a_, SEXP warn_if_);
 
 
 
@@ -278,12 +287,12 @@ SEXP     R_lgammacor(SEXP x_, SEXP nalgm_, SEXP xbig_);
 
 
 // gamma-variants.c : --------------------------------------------------------
-double gammafn_ver(double x, int version, int trace_lev);
-SEXP   R_gamma_ver(SEXP x_, SEXP version_, SEXP trace_);
+double gammafn_ver(double x, int version, int trace_lev, stirlerr_version_t stirl_ver);
+SEXP R_gamma_ver(SEXP x_, SEXP version_, SEXP trace_, SEXP stirlerr_v_);
+SEXP R_dpq_stirlerr(SEXP x_, SEXP stirlerr_v);
 
 // stirlerr.c : --------------------------------------------------------------
-double dpq_stirlerr(double n);
-
+double dpq_stirlerr(double n, stirlerr_version_t version);
 
 // chebyshev.c : -------------------------------------------------------------
 
@@ -297,6 +306,19 @@ SEXP R_chebyshev_nt  (SEXP coef_, SEXP eta_);
 // DPQ-misc.c: --------------------------------------------------------------------
 
 // 1. Functions from R's  C API  Rmath.h  -- not (yet) existing as base R functions
+
+SEXP dpq_pow   (SEXP x_, SEXP y_);
+SEXP dpq_pow_di(SEXP x_, SEXP y_);
+/*
+  double R_pow(double x, double y)
+  double R_pow_di(double, int)
+*/
+
+SEXP R_log1pmx(SEXP x_);
+/* double log1pmx (double X)
+     Computes 'log(1 + X) - X' (_log 1 plus x minus x_), accurately even
+     for small X, i.e., |x| << 1.
+*/
 
 SEXP R_log1pmx(SEXP x_);
 /* double log1pmx (double X)

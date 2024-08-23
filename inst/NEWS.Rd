@@ -4,6 +4,90 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.5-9 (2024-08-23, svn r333)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{dbinom_raw()} gets a new more accurate
+      \code{version = "R4.4"}, using the new \code{pow1p()} function, from
+      R-devel, i.e., \R 4.4.0 and newer.
+
+      \item \code{stirlerr_simpl()} gets argument \code{version}, a string specifying
+      the exact function to be used, currently with options \code{("R3",
+      "lgamma1p", "MM2", "n0")}.  The first being the direct formula
+      hardwired in \R up to versions 4.3.z, \code{"lgamma1p"} is to use
+      \code{lgamma1p(n)} instead of \code{lgamma(n+1)}, whereas
+      \code{"MM2"} is a version using \code{lgamma(n)} and slightly more
+      accurate for \eqn{n \in [1, 5]}, approximately.
+
+      \code{stirlerr()} correspondingly gets argument \code{direct.ver} to
+      be passed to \code{stirlerr_simpl(., version=*)} in the
+      \dQuote{direct} formula case, when \code{n < cutoffs[1]}.
+
+      \item \code{stirlerr()} gets argument \code{order} allowing currently
+      up to order 20 terms (constants \code{S0}..\code{S19}) in Stirling's
+      series (and \emph{not} using \code{cutoffs} or direct formula).
+
+      \item New \code{stirlerrC()} interfacing to C code which should
+      \dQuote{parallelize} R's own C level \code{stirlerr()}.
+
+      More documentation and tests; experiments added in
+      \file{../Misc/stirlerr-trms.R}; nice explorations to \file{../tests/stirlerr-tst.R}
+
+      \item New functions \code{pow(x,y)} and \code{pow_di(x,y)} computing
+      \eqn{x^y} as in \R's C API \file{Rmathlib}.
+
+      \item \code{dgamma.R(x, *)} gets new optional argument \emph{dpois_r_args}.
+
+      \item New function \code{expm1x()} providing \eqn{exp(x) - 1 - x}
+      numerically accurately also for small \eqn{|x|}.
+
+      \item New function \code{pntGST23_T6()} implementing Gil et al.(2023)'s
+      first asymptotic formula (Theorem 6).
+
+      \item New experimental \code{Ixpq()} implementing Gil et al.(2023)'s
+      direct incomplete Beta function, i.e., \code{pbeta()} version.
+      \bold{TODO}: make it work with \code{mpfr()} !
+
+      \item New function \code{pntGST23_T6()} and \code{pntGST23_1()}
+      implementing Gil et al.(2023)'s first asymptotic formula (Theorem 6),
+      and based on Temme's Maple code for their direct computation (1).
+
+      \item New function \code{pntVW13()} implementing Viktor Witkovský(2013)'s
+      algorithm, from his published Matlab code.
+
+      \item Data set \code{pt_Witkovsky_Tab1} containing (the free software
+      subset of) Viktor \enc{Witkovský}{Witkovsky}(2013)'s \emph{Table 1} of
+      \code{pt(x, df=nu, ncp=delta)} examples; updated with octave results
+      for both the original 2013 matlab code and the 2022 corrected one.
+
+      \item \code{lgamma1p_series(x, k)}, the Taylor series approximations
+      for \code{lgamma1p(x)}\eqn{ := \log \Gamma(1+x)} are now available up
+      to \eqn{k = 15}, also for \code{mpfr()} numbers \code{x}.
+
+      \item New \code{gam1d()} and \code{gamln1()} providing more TOMS 708
+      auxiliary routines.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \emph{fix} format fixes for when 'long != long long'.
+
+      \item \code{dgamma.R(x, ..)} now \emph{does} vectorize in \code{x},
+      as documented.
+
+      \item minor adjustment of \code{pntR()}'s default \code{use.pnorm}.
+
+      \item \file{src/bd0.c} needed one more \code{PROTECT()}.
+    }
+  }
+  \subsection{Misc}{
+    \itemize{
+      \item new \file{tests/dt-ex.R} exploring \code{dt()} accuracy issues,
+      mostly historical, but newly for \code{df=}\eqn{\nu \ll 1}{nu << 1}.
+    }
+  }
+}
+
 \section{Version 0.5-8 (2023-11-30, svn r278)}{
   \subsection{BUG FIXES}{
     \itemize{

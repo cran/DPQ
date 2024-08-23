@@ -20,10 +20,18 @@ importFrom("stats"
          , dhyper, phyper
          , dt, pt, qt
          , dpois, ppois, qpois
+           # ---------------
+         , integrate
+         , .lm.fit
          , uniroot
 )
 
+## Plotting in our own functions, e.g. for   `plotIt = TRUE`
+
+importFrom("grDevices", adjustcolor)
+
 importFrom("graphics",
+           abline,
            curve, legend, lines, par, plot
            )
 
@@ -31,8 +39,8 @@ importFrom("methods", as, is, new
            )
 
 importFrom("utils"
-         , globalVariables
-         , str
+         , head, tail
+         , str, strOptions
            )
 
 ### ----------------------- Exporting ----------------------------
@@ -54,7 +62,7 @@ export(
 
   , frexp, ldexp
   , modf
-
+  , pow, pow_di, .pow
   , .dntJKBch, .dntJKBch1
 
 
@@ -95,7 +103,8 @@ export(
   , lbeta_asy, lbetaI, lbetaM, lbetaMM
   ## , lbetaIhalf
   , algdiv # name as in TOMS 708 .. but really?
-  , bpser  # name as in TOMS 708
+  , bpser  # name as in TOMS 708 -- version of pbeta()
+  , gam1d, gamln1 # gam1() & gamln1() in TOMS 708
   , okLongDouble # as with valgrind, it does not work contrary to what .Machine says
 
   , dpsifn # R/psigamma-deriv.R
@@ -122,13 +131,19 @@ export(
   , pnchisqBolKuz
   , qnchisqBolKuz
 
-  ## Naming -fixme?
+  ## Naming --- NB: export the *.1 versions (non-vectorized) mostly for *didactical* reasons
   , pnt3150, pnt3150.1
   , pntChShP94, pntChShP94.1
   , pntJW39, pntJW39.0
   , pntLrg
   , pntP94, pntP94.1
+  , pntVW13
+  , pntGST23_T6, pntGST23_T6.1
+  , pntGST23_1 # , pntGST23_1.1
+  , Ixpq # for now, __experimental__
   , pntR, pntR1
+
+  , pow1p
 
   , ppoisD, qpoisR
 
@@ -140,9 +155,10 @@ export(
   , dpois_simpl
   , dpois_simpl0 # << "experimental" respectively purely didactical
   , bd0, bd0C
-  , stirlerr, stirlerr_simpl
+  , stirlerr, stirlerr_simpl, stirlerrC
   , bd0_p1l1d1, bd0_p1l1d, bd0_l1pm
   , ebd0, ebd0C
+  , expm1x, expm1xTser # R/expm1x.R
   , p1l1, p1l1., p1l1p, p1l1ser ## NB: p1l1p() via log1pmx()  is *very* good!
   , .p1l1ser
 

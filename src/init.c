@@ -65,7 +65,7 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(dpq_pow, 2),
     CALLDEF(dpq_pow_di, 2),
     CALLDEF(R_dpq_stirlerr, 2),// <--> stirlerr.c
-    CALLDEF(R_logcf, 5),       // <--> logcf.c
+    CALLDEF(R_logcf, 6),       // <--> logcf.c
     CALLDEF(R_lgammacor, 3),   // <--> lgammacor.c
     CALLDEF(R_chebyshev_eval, 3), // <--> chebyshev.c
     CALLDEF(R_chebyshev_nt,   2), // <-->    "
@@ -73,6 +73,9 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(dpq_ebd0, 3),    //  "    "
     CALLDEF(R_dpsifn, 4),    // <--> dpsifn.c
     CALLDEF(R_gamma_ver, 4), // <--> gamma-variants.c
+
+    CALLDEF(R_deltagammainc, 4), // <--> ./gamma_inc_T1006.c
+    CALLDEF(R_lgammaP11, 1),     //  "     "
 
     {NULL, NULL, 0}
 };

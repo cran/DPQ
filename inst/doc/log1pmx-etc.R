@@ -7,12 +7,12 @@ require(DPQ)
 
 
 ###################################################
-### code chunk number 2: plot_D0tilde
+### code chunk number 2: plot_d0
 ###################################################
 par(mar = 0.1 + c(2.5, 3, 0, 0), mgp = c(1.5, 0.6, 0), las=1)
 curve(x*log(x)+1-x, 1e-7, 6, n=1001, col=2, lwd=2,
       panel.first=grid(), xlab=quote(u), ylab="")
-mtext(quote(tilde(D[0])(u) == ~ u %.%~ log(u)+1-~u), line=-2, col=2)
+mtext(quote(d[0](u) == ~ u %.%~ log(u)+1-~u), line=-2, col=2)
 abline(a = 1-exp(1), b=1, col=adjustcolor(4, 3/4), lwd=1.5, lty=2)
 text(5, 2.5, quote(1%.%u - e+1), col=4)
 axis(1, at=exp(1), quote(e), tck=0.2, col=4, col.axis=4, lty=3)
@@ -28,7 +28,7 @@ p.p1l1 <- function(from, to, ylim=NULL, cS = adjustcolor(6, 1/2),
     cols <- palette()[c(2,4, 6, 3,5)]; cols[3] <- cS
     c1 <- curve(x*log1p(x), from=from, to=to, n=n,
                 col=2, ylab="", ylim=ylim,
-                panel.first = abline(h=0, v=0, lty=3, lwd=1/2))
+                panel.first = abline(h=0:1, v=-1:0, lty=3, lwd=1/2))
     c2 <- curve(log1pmx(x), add=TRUE, n=n, col=4)
     with(c1, {
         lines(x, y+c2$y, col=cS, lwd=3)
@@ -51,9 +51,9 @@ p.p1l1 <- function(from, to, ylim=NULL, cS = adjustcolor(6, 1/2),
 ### code chunk number 4: l1p1-curves
 ###################################################
 par(mfcol=1:2, mar = 0.1 + c(2.5, 3, 1, 2), mgp = c(1.5, 0.6, 0), las=1)
-p.p1l1(-7/8, 2, ylim = c(-1,2))
+p.p1l1( -1, 2, ylim = c(-1,2))
 zoomTo <- function(x,y=x, tx,ty){ arrows(x,-y, tx, ty)
-                                    text(x,-y, "zoom in", adj=c(1/3,9/8)) }
+                                  text  (x,-y, "zoom in", adj=c(1/3,9/8)) }
 zoomTo0 <- function(x,y=x) zoomTo(x,y, 0,0)
 zoomTo0(.3)
 p.p1l1(-1e-4, 1.5e-4, ylim=1e-8*c(-.6, 1), do.leg=FALSE)
@@ -74,6 +74,7 @@ lcurve(log1pmx, -.01, .01); rect(-.002,log1pmx(-.002), .002, 0); zoomTo0(2e-3,1e
 lcurve(function(x) -log1pmx(x), -.002, .002, log="y", yaxt="n") -> l1r
 sfsmisc::eaxis(2); abline(v=0, lty=3)
 d1r <- cbind(as.data.frame(l1r), y.naive = with(l1r, -(log(1+x)-x)))
+## --> d1r is data frame w/ ("x", "y", "y.naive")
 c4 <- adjustcolor(4, 1/3)
 lines(y.naive ~ x, data=d1r, col=c4, lwd=3, lty=2)
 legend("left", legend=expression(- log1pmx(x), -(log(1+x)-x)),

@@ -6,26 +6,29 @@
 \alias{p1l1ser}
 \alias{.p1l1ser}
 \description{
-  The binomial deviance function \code{\link{bd0}(x,M)} can mathematically
-  be re-written as \eqn{bd0(x,M) = M * p1l1((x-M)/M)} where we look into providing
-  numerically stable formula for \eqn{p1l1(t)} as its mathematical formula
-  \eqn{p1l1(t) = (t+1)\log(1+t) - t}{p1l1(t) = (t+1)*log(1+t) - t}
+  The binomial deviance function \code{\link{bd0}(x,M) :=}
+  \eqn{D_0(x,M) := M \cdot d_0(x/M)}{D_0(x,M) := M * d_0(x/M)} (see \code{\link{bd0}})
+  can mathematically be re-written as
+  \eqn{D_0(x,M) = M \cdot p_1l_1\bigl(\frac{x-M}{M}\bigr)}{D_0(x,M) = M * p1l1((x-M)/M)}
+  where we look into providing numerically stable formulas for
+  \code{p1l1(t)}\eqn{ = p_1l_1(t)}{}, as its direct mathematical formula
+  \eqn{p_1l_1(t) = (t+1)\log(1+t) - t}{p1l1(t) = (t+1)*log(1+t) - t}
   suffers from cancellation for small \eqn{|t|}, even when
   \code{\link{log1p}(t)} is used instead of \code{log(1+t)}.
 
   Using a hybrid implementation, \code{p1l1()} uses a direct formula, now
-  the stable one in \code{p1l1p()}, for \eqn{\left| t \right| > c}{|t| > c}
-  and a series approximation for \eqn{\left|t\right| \le c}{|t| <= c} for
-  some \eqn{c}.
+  the stable one in \code{p1l1p(t) := log1pmx(t) + t*log1p(t)}, for \eqn{\left| t \right| > c}{|t| > c}
+  and a series approximation for basically \eqn{\left|t\right| \le c}{|t| <= c},
+  \eqn{c \approx 0.07}{c ~= 0.07}.
 
-  NB:  The re-expression \code{\link{log1pmx}()} is almost perfect; it
-  fixes the cancellation problem entirely (and exposes the fact that
-  \code{\link{log1pmx}()}'s internal cutoff seems sub optimal.
+  NB:  The re-expression via \code{\link{log1pmx}(x) := log(1+x) - x} is almost perfect; it
+  fixes the cancellation problem entirely (and analysis further suggests that
+  \code{\link{log1pmx}()}'s internal cutoff seems sub optimal).
 }
 \usage{% -->  ../R/dgamma.R <<<<<
  p1l1p  (t, ...)
  p1l1.  (t)
- p1l1   (t,    F = t^2/2)
+ p1l1   (t,    F = t^2/2, ...)
  p1l1ser(t, k, F = t^2/2)
 .p1l1ser(t, k, F = t^2/2)
 }
@@ -34,7 +37,7 @@
   \item{...}{optional (tuning) arguments, passed to \code{\link{log1pmx}()}.}
   \item{k}{small positive integer, the number of terms to use in the Taylor
     series approximation \code{p1l1ser(t,k)} of \code{p1l1(t)}.}
-  \item{F}{numeric vector of multiplication \bold{f}actor; \emph{must} be
+  \item{F}{(numeric vector) multiplication \bold{f}actor; \emph{must} be
     \code{t^2/2} for the \code{p1l1()} function, but can be modified,
     e.g. in more direct \code{bd0()} computations.}
 }
@@ -46,10 +49,14 @@
 }
 \author{Martin Maechler}
 \seealso{
-  \code{\link{bd0}}; our package vignette \emph{log1pmx, bd0, stirlerr - Probability Computations in R}.
-  \code{\link{dbinom}} the latter for the C.Loader(2000) reference.
+  Both \code{\link{log1pmx}()} and \code{\link{bd0}};   our package vignette
+ \emph{\code{log1pmx}, \code{bd0}, \code{stirlerr} - Probability
+  Computations in R}.%  ../vignettes/log1pmx-etc.Rnw
+  Further, \code{\link{dbinom}}, also for the C. Loader (2000) reference.
 }
 \examples{
+(doExtras <- DPQ:::doExtras()) # TRUE e.g. if interactive()
+
 t <- seq(-1, 4, by=1/64)
 plot(t, p1l1ser(t, 1), type="l")
 lines(t, p1l1.(t), lwd=5, col=adjustcolor(1, 1/2)) # direct formula
@@ -135,9 +142,9 @@ p.relEr <- function(i, ylim = c(11,17), type = "o",
     AX(1, at= tE, labels = as.expression(
                       lapply(tenE,
                              if(neg)
-                                 function(e) substitute(-10^{E}, list(E = e+0))
+                                 function(e) substitute(-10^{E}, list(E = e +0))
                              else
-                                 function(e) substitute( 10^{E}, list(E = e+0)))))
+                                 function(e) substitute( 10^{E}, list(E = e +0)))))
 }
 
 p.relEr(t > 0, ylim = c(1,17))
@@ -191,7 +198,7 @@ signif(t(rr["t.0",,]),3) # ==> Should be boundaries for the hybrid p1l1()
 
 ###------------- Well,  p1l1p()  is really basically good enough ... with a small exception:
 rErr1k <- curve(asNumeric(p1l1p(x) / p1l1.(mpfr(x, 4096)) - 1), -.999, .999,
-                n = 4000, col=2, lwd=2)
+                n = if(doExtras) 4000 else 800, col=2, lwd=2)
 abline(h = c(-8,-4,-2:2,4,8)* 2^-52, lty=2, col=adjustcolor("gray20", 1/4))
 ## well, have a "spike" at around -0.8 -- why?
 
@@ -208,16 +215,14 @@ abline(v= -.791, lty=3, lwd=2, col="blue4") # -.789  from visual ..
 ##--> The "error" is in log1pmx() which has cutoff minLog1Value = -0.79149064
 ##--> which is clearly not optimal, at least not for computing p1l1p()
 
-d <- 1/2048; x <- seq(-1+d, 1, by=d)
-p1l1Xct <- p1l1.(mpfr(x, 4096))
+d <- if(doExtras) 1/2048 else 1/512; x <- seq(-1+d, 1, by=d)
+p1l1Xct <- p1l1.(mpfr(x, if(doExtras) 4096 else 512))
 rEx.5 <- asNumeric(p1l1p(x, minL1 = -0.5) / p1l1Xct - 1)
 lines(x, abs(rEx.5), lwd=2.5, col=adjustcolor(4, 1/2)); abline(v=-.5, lty=2,col=4)
 rEx.25 <- asNumeric(p1l1p(x, minL1 = -0.25) / p1l1Xct - 1)
 lines(x, abs(rEx.25), lwd=3.5, col=adjustcolor(6, 1/2)); abline(v=-.25, lty=2,col=6)
 lines(lowess(x, abs(rEx.5),  f=1/20), col=adjustcolor(4,offset=rep(1,4)/3), lwd=3)
-
-lines(lowess(x, abs(rEx.25), f=1/20), col=adjustcolor(6,offset=rep(1,4)/3), lwd=
-3)
+lines(lowess(x, abs(rEx.25), f=1/20), col=adjustcolor(6,offset=rep(1,4)/3), lwd=3)
 
 rEx.4 <- asNumeric(p1l1p(x, tol_logcf=1e-15, minL1 = -0.4) / p1l1Xct - 1)
 lines(x, abs(rEx.4), lwd=5.5, col=adjustcolor("brown", 1/2)); abline(v=-.25, lty=2,col="brown")

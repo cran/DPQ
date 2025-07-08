@@ -107,12 +107,13 @@ export(
   , gam1d, gamln1 # gam1() & gamln1() in TOMS 708
   , okLongDouble # as with valgrind, it does not work contrary to what .Machine says
 
+  , dltgammaInc, lgammaP11 # R/beta-fns.R -> src/gamma_inc_T1006.c
   , dpsifn # R/psigamma-deriv.R
   , lgamma1p., lgamma1p, lgamma1p_series
   , lgammacor
   , log1pmx
   , logQab_asy
-  , logcfR, logcfR., logcf
+  , logcfR, logcfR_vec, logcf
   , logr
   , lssum, lsum
 
@@ -156,6 +157,7 @@ export(
   , dpois_simpl0 # << "experimental" respectively purely didactical
   , bd0, bd0C
   , stirlerr, stirlerr_simpl, stirlerrC
+  , bd0_p1l1
   , bd0_p1l1d1, bd0_p1l1d, bd0_l1pm
   , ebd0, ebd0C
   , expm1x, expm1xTser # R/expm1x.R

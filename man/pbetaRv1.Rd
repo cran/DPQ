@@ -60,7 +60,8 @@ pbetaRv1(q, shape1, shape2, lower.tail = TRUE,
 %% \note{
 %% }
 \seealso{
-  \code{\link{pbeta}}.
+  \code{\link{pbeta}};
+  our approximations to the non-central beta \code{\link{pnbetaAppr2}}.
 }
 \examples{
 all.equal(pbetaRv1(1/4, 2, 3),
@@ -74,9 +75,12 @@ b <- 5*rlnorm(N)
 pbt <- pbeta(x, a, b)
 for(i in 1:N) {
    stopifnot(all.equal(pbetaRv1(x[i], a[i], b[i]), pbt[i]))
-   cat(".", if(i \%\% 20 == 0) paste0(i, "\n"))
+   cat(".", if(i \%\% 20 == 0) paste0(i, "\n")) #%
 }
 
+if(requireNamespace("Rmpfr"))
+    pbetaRv1(.1, 1e-3, Rmpfr::mpfr(1e7, 128), sml = 2^Rmpfr::mpfr(-1e20, 128),
+             lower.tail = FALSE, verbose=2)
 }
 \keyword{math}
 \keyword{distribution}

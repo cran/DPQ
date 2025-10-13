@@ -782,8 +782,63 @@ gam1d <- function(a, warnIf=TRUE, verbose=FALSE) { # ../src/bpser.c
     .Call(C_R_gam1, a, warnIf, verbose)
 }
 
+gam1 <- function(a, useTOMS = is.numeric(a), warnIf=TRUE, verbose=FALSE) {
+## // == 1/gamma(a+1) - 1
+    if(!length(a)) return(a)
+    if(useTOMS) ##  --- double precision version -- from toms708.c --------
+      ## /*     ------------------------------------------------------------------ */
+      ## /*     COMPUTATION OF 1/GAMMA(A+1) - 1  FOR -0.5 <= A <= 1.5 */
+      ## /*     ------------------------------------------------------------------ */
+      gam1d(a, warnIf=warnIf, verbose=verbose)
+    else if(inherits(a, "mpfr")) { ## >>>> identical  to DPQmpfr::gam1M()  <<<<<
+        pr_a <- Rmpfr::getPrec(a)
+        roundM <- Rmpfr::roundMpfr
+        ## use larger precision
+        bits <- ceiling(-log2(abs(a)))
+        bits[a == 0] <- 0
+        usePr <- pr_a + 2L + pmax(as.integer(bits), 0L)
+        ## and "round back"
+        roundM(1/gamma(roundM(a, usePr) + 1) - 1, pr_a)
+        ##     ^^^^^^^^       ^       ^^^^^^^^^^
+    } else {
+        warning("not numeric, nor \"mpfr\" -- using direct, possibly inaccurate formula")
+        1/gamma(a + 1) - 1
+    }
+} ## {gam1}
+
+
 ## _yet_ another lgamma1p() , name and C code from TOMS 708 (R/src/nmath/toms708.c
-gamln1 <- function(a, warnIf=TRUE) .Call(C_R_gamln1, a, warnIf) # --> ../src/bpser.c
+gamln1. <- function(a, warnIf=TRUE) .Call(C_R_gamln1, a, warnIf) # --> ../src/bpser.c
+
+gamln1 <- function(a, useTOMS = is.numeric(a), warnIf=TRUE) {
+  ##  == lgamma(a+1)    bpser() used it only for 0 <= a0 < 1
+  ## * ----------------------------------------------------------------------- */
+  ## *     EVALUATION OF LN(GAMMA(1 + A)) FOR -0.2 <= A <= 1.25 */
+  ## * ----------------------------------------------------------------------- */
+
+  ## FIXME: also SHOULD HAVE  lgamma1p()
+  ##       vvvvvvvvvvvvvvv    ---------- with Maple derived formulas,
+  ## from  lgamma1p_series() up to 15 terms !! --- should (?) use also with MPFR ?
+  if(!length(a)) return(a)
+  if(useTOMS) #  --- double precision version -- from toms708.c --------
+    gamln1.(a, warnIf=warnIf)
+  else if(inherits(a, "mpfr")) { ## FIXME -- for really small 'a', have  DPQ :: lgamma1p_series() *working* with "mpfr"
+    pr_a <- Rmpfr::getPrec(a)
+    roundM <- Rmpfr::roundMpfr
+    ## use larger precision
+    bits <- ceiling(-log2(abs(a)))
+    bits[a == 0] <- 0
+    usePr <- pr_a + 2L + pmax(as.integer(bits), 0L)
+    ## and "round back"
+    roundM(lgamma(roundM(a, usePr) + 1), pr_a)
+    ##     ^^^^^^^       ^       ^^^^^^
+  } else {
+    warning("not numeric, nor \"mpfr\" -- using direct, possibly inaccurate formula")
+    ## TODO?  switch between    log(a) + lgamma(a)   and the following
+    lgamma(a + 1)
+  }
+}
+
 
 
 ##  ../src/gamma_inc_T1006.c -- TOMS 1006 "fast and accurate eval of a generalized incomplete gamma function"
@@ -1235,6 +1290,110 @@ qbeta.R  <-  function(alpha, p, q,
     ## L_converged:
     if(verbose) cat(" ", o.it,"outer iterations\n")
     if (swap.tail) 1 - xinbta else xinbta
+}
+
+###---------------- Abramowitz & Stegun, 26.5 Beta Distribution  --- p.945 -- Approximations
+
+###------------- I am particularly interested for  log.p=TRUE  "very outer tail" where pbeta(*, log.p=FALSE) == 0
+
+### NB:  {DPQmpfr}  pbetaD94() *and* pbeta_ser()
+
+## via chi^2 -- A. & S. p.945, eq. 26.5.20 --------------------------------------
+## fix formulas without checking -- for exploration
+.pbeta.eq20 <- function(q, a,b, lower.tail = TRUE, log.p = FALSE,
+                        ._1_q = .5 - q + .5) # 1-q "carefully"
+{
+    ch2 <- ((a+b-1) * (3-q) - (b-1)) * ._1_q # (should recycle fine)
+    pchisq(ch2, df = 2*b, lower.tail=!lower.tail, log.p=log.p)
+}
+## swapped tail version
+.pbetaSeq20 <- function(q, a,b, lower.tail = TRUE, log.p = FALSE)
+  .pbeta.eq20(.5 - q + .5, b, a, lower.tail = !lower.tail, log.p=log.p, ._1_q = q)
+
+pbetaAS_eq20 <- function(q, shape1, shape2, lower.tail = TRUE, log.p = FALSE, warnBad = TRUE)
+{
+    a <- shape1
+    b <- shape2
+    ab1 <- a + b - 1
+    ._1_q <- .5 - q + .5 # 1-q "carefully"
+    ab1x <- ab1 * ._1_q # (a+b-1)(1-q)  using {a,b, q} ==> properly recycled
+    n <- length(r <- ab1x)
+    if(!n) return(r) # of length 0
+    if(n > length(q)) ._1_q <- rep_len(._1_q, n)
+    if(n > length(a)) a <- rep_len(a, n)
+    if(n > length(b)) b <- rep_len(b, n)
+    ok <- (ab1x <= 0.8) # "necessary" by A & S {== iff (26.5.21) is not good }
+    swap <- !ok & (ab1*q <= 0.8) # swapping will be ok
+    bad <- !ok & !swap
+    if(warnBad && any(bad))
+        warning("potentially have ", sum(bad)," 'bad'ly approximated pbeta values")
+    if(any(swap))
+        r[swap] <- pbetaAS_eq20(._1_q[swap], b[swap], a[swap],  # warn*: shdnt happen
+                                lower.tail = !lower.tail, log.p=log.p, warnBad=TRUE)
+    ## if(any(ok)) .. rather deal with "bad" as well:
+    if(any(ok <- !swap)) {
+        b <- b[ok]
+        ch2 <- (ab1x*(3-q))[ok] - ._1_q[ok]*(b-1)
+        nu <- 2*b
+        r[ok] <- pchisq(ch2, df=nu, lower.tail=!lower.tail, log.p=log.p)
+    }
+    r
+}
+
+## via normal -- A. & S. p.945, eq. 26.5.21,
+## fix formulas without checking -- for exploration
+.pbeta.eq21 <- function(q, a,b, lower.tail = TRUE, log.p = FALSE,
+                        ._1_q = .5 - q + .5) # 1-q "carefully"
+{
+    w1 <- (b *    q )^(1/3)
+    w2 <- (a * ._1_q)^(1/3)
+    pnorm(3*(w1-w1/(9*b) - (w2-w2/(9*a))) / sqrt(w1^2/b + w2^2/a),
+          lower.tail=lower.tail, log.p=log.p)
+}
+## swapped tail version
+.pbetaSeq21 <- function(q, a,b, lower.tail = TRUE, log.p = FALSE)
+  .pbeta.eq21(.5 - q + .5, b, a, lower.tail = !lower.tail, log.p=log.p, ._1_q = q)
+
+
+pbetaAS_eq21 <- function(q, shape1, shape2, lower.tail = TRUE, log.p = FALSE, warnBad = TRUE) {
+    a <- shape1
+    b <- shape2
+    ab1 <- a + b - 1
+    ._1_q <- .5 - q + .5 # 1-q "carefully"
+    ab1x <- ab1 * ._1_q # (a+b-1)(1-q)  using {a,b, q} ==> properly recycled
+    n <- length(r <- ab1x)
+    if(!n) return(r) # of length 0
+    if(n > length(q)) ._1_q <- rep_len(._1_q, n)
+    if(n > length(a)) a <- rep_len(a, n)
+    if(n > length(b)) b <- rep_len(b, n)
+    ok <- (ab1x >= 0.8) # "necessary" by A & S {== iff (26.5.20) is not good }
+    swap <- !ok & (ab1*q >= 0.8)
+    bad <- !ok & !swap
+    if(warnBad && any(bad))
+        warning("potentially have ", sum(bad)," 'bad'ly approximated pbeta values")
+    if(any(swap))
+        r[swap] <- pbetaAS_eq21(._1_q[swap], b[swap], a[swap],  # warn*: shdnt happen
+                                lower.tail = !lower.tail, log.p=log.p, warnBad=TRUE)
+    ## if(any(ok)) .. rather deal with "bad" as well:
+    if(any(ok <- !swap)) {
+        a <- a[ok]
+        b <- b[ok]
+        q <- rep_len(q, n)[ok]
+        w1 <- (b *     q    )^(1/3)
+        w2 <- (a * ._1_q[ok])^(1/3)
+        r[ok] <- pnorm(3*(w1-w1/(9*b) - (w2-w2/(9*a))) / sqrt(w1^2/b + w2^2/a),
+                       lower.tail=lower.tail, log.p=log.p)
+    }
+    r
+}
+
+pbetaNorm2 <- function(q, shape1, shape2, lower.tail = TRUE, log.p = FALSE) {
+  a <- shape1
+  b <- shape2
+  apb <- a+b
+  mu <- a/apb
+  sd <- sqrt(a*b)/apb/sqrt(apb+1)
+  pnorm(q, mu, sd, lower.tail=lower.tail, log.p=log.p)
 }
 
 ## Local Variables:

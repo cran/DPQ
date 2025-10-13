@@ -4,6 +4,41 @@
 \title{DPQ News}
 \encoding{UTF-8}
 
+\section{Version 0.6-1 (2025-10-13, svn r352)}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{pnchisq_ss()} gets new optional argument \code{ssr = ss(....)}
+      for flexibility.
+
+      \item New \code{gam1()} calls mpfr-ized direct code or the
+      double-only C code \code{gam1d()}
+
+      \item Add Abramowitz & Stegun, p.945, pbeta() approximations 26.5.20
+      and 26.5.21 as \code{pbetaAS_eq20()} and \code{pbetaAS_eq21()}.
+      For \dQuote{didactical} reasons, also provide the simple moment
+      matching normal approximation \code{pbetaNorm2()}.
+      For now, also low-level versions \code{.pbeta.eq20()}, \dots, \code{.pbetaSeq21()}.
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{ldexp({}, 1)} or \code{pow({}, 2)} no longer segfault. % ==> needed for DPQmpfr to pass on Winbuilder !!!
+
+      \item \code{pbetaRv1()} for \code{verbose = TRUE} and/or
+      \code{mpfr}-number arguments.
+
+      \item \code{dnbinomR()} and \code{dnbinom.mu()}: fix vectorization
+      logic, using \code{ifelse()}.
+
+      \item \code{pbetaRv1()} for \code{verbose = TRUE} and/or
+      \code{mpfr}-number arguments.
+
+      \item \code{dnbinomR()} and \code{dnbinom.mu()}: fix vectorization
+      logic, using \code{ifelse()}.
+    }
+  }
+}
+
 \section{Version 0.6-0 (2025-07-08, svn r342)}{
   \subsection{NEW FEATURES}{
     \itemize{

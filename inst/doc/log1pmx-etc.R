@@ -91,5 +91,3 @@ y2 <- 1e-8
 rect(-.002, -y2, .002, y2, col=adjustcolor("gray",1/2), border="transparent")
 zoomTo(15e-4, 9*y2, 13e-4, -y2)
 plot(relE.naive ~ x, data=d1r, type="l", ylim = c(-1,1)*y2); abline(h=0,lty=3)
-
-

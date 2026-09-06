@@ -77,27 +77,29 @@ dntJKBf (x, df, ncp, log = FALSE, M = 1000)
 \examples{
 tt <-  seq(0, 10, length.out = 21)
 ncp <- seq(0,  6, length.out = 31)
-dt3R   <- outer(tt, ncp, dt,     df = 3)
+dt3R   <- outer(tt, ncp, dt,      df = 3)
 dt3JKB <- outer(tt, ncp, dntJKBf, df = 3)
-all.equal(dt3R, dt3JKB) # Lnx(64-b): 51 NA's in dt3R
+all.equal(dt3R, dt3JKB)
+stopifnot(is.finite(dt3R)) # on all platforms now (!) -- Lnx(64-b): 51 NA's in dt3R
 
 x <- seq(-1,12, by=1/16)
 fx <- dt(x, df=3, ncp=5)
-re1 <- 1 - .dntJKBch(x, df=3, ncp=5) / fx ; summary(warnings()) # slow, with warnings
-op <- options(warn = 2) # (=> warning == error, for now)
+op <- options(warn = 0) # (factory def.)
+re1 <- 1 - .dntJKBch(x, df=3, ncp=5) / fx ; summary(warnings()) # slow, with NaN warnings
+options(warn = 2) # (=> warning == error, for now)
 re2 <- 1 -  dntJKBf (x, df=3, ncp=5) / fx  # faster, no warnings
-stopifnot(all.equal(re1[!is.na(re1)], re2[!is.na(re1)], tol=1e-6))
+stopifnot(all.equal(re1[!is.na(re1)], re2[!is.na(re1)], tolerance=1e-6))
 head( cbind(x, fx, re1, re2) , 20)
 matplot(x, log10(abs(cbind(re1, re2))), type = "o", cex = 1/4)
 
 ## One of the numerical problems in "base R"'s non-central t-density:
-options(warn = 0) # (factory def.)
+options(warn = 0)
 x <- 2^seq(-12, 32, by=1/8) ; df <- 1/10
 dtm <- cbind(dt(x, df=df,           log=TRUE),
              dt(x, df=df, ncp=df/2, log=TRUE),
              dt(x, df=df, ncp=df,   log=TRUE),
              dt(x, df=df, ncp=df*2, log=TRUE)) #.. quite a few warnings:
-summary(warnings())
+summary(warnings()) # full precision may not have been achieved in 'pnt{final}'
 matplot(x, dtm, type="l", log = "x", xaxt="n",
         main = "dt(x, df=1/10, log=TRUE) central and noncentral")
 sfsmisc::eaxis(1)
@@ -107,8 +109,8 @@ legend("right", legend=c("", paste0("ncp = df",c("/2","","*2"))),
 (doExtras <- DPQ:::doExtras()) # TRUE e.g. if interactive()
 (ncp <- seq(0, 12, by = if(doExtras) 3/4 else 2))
 names(ncp) <- nnMs <- paste0("ncp=", ncp)
-tt  <- seq(0, 5, by =  1)
-dt3R <- outer(tt, ncp, dt,   df = 3)
+tt  <- seq(0, 5, by = if(doExtras) 0.5 else 2)
+dt3R <- outer(tt, ncp, dt,  df = 3)
 if(requireNamespace("Rmpfr")) withAutoprint({
    mt  <- Rmpfr::mpfr(tt , 128)
    mcp <- Rmpfr::mpfr(ncp, 128)
@@ -117,12 +119,12 @@ if(requireNamespace("Rmpfr")) withAutoprint({
                      M = if(doExtras) 1024 else 256)) # M=1024: 7 sec [10 sec on Winb]
    relE <- Rmpfr::asNumeric(sfsmisc::relErrV(dt3M, dt3R))
    relE[tt != 0, ncp != 0]
+   ## all.equal(dt3R, dt3M, tol=0) # 1.2e-12
 })
-
-## all.equal(dt3R, dt3V, tol=0) # 1.2e-12
+options(op) # reset to prev.
 
 \donttest{ # ---- using MPFR high accuracy arithmetic (too slow for routine testing) ---
-## no such kink here:
+op <- options(warn = 0)## no such kink here:
 x. <- if(requireNamespace("Rmpfr")) Rmpfr::mpfr(x, 256) else x
 system.time(dtJKB <- dntJKBf(x., df=df, ncp=df, log=TRUE)) # 43s, was 21s and only 7s ???
 lines(x, dtJKB, col=adjustcolor(3, 1/2), lwd=3)

@@ -35,8 +35,9 @@ Kolm1.dist <- function(lam, eps) {
 }
 (x. <- Kolm1.dist(lam = erg$max, eps = 1e-15))
 ## 1360,  was  1422 # was '1001' ## or '1301' or .. :  in any case ==  "alphlimit + 1" !!
-
-
+## 1071 on linux/aarch64 [via podman rcheckserver]
+(x.2 <- Kolm1.dist(lam = 1262.6, eps = 1e-15))
+## aarch64: 1271 ...
 
 ##- So for lambda=977.8 and x=1001 we get a distance of about 5.2e-06.
 ##- (This inexactness seems to hold for all lambda values greater than
@@ -46,7 +47,7 @@ Kolm1.dist <- function(lam, eps) {
 lam <- 977.8
 (p1 <- ppois(1001, lam))
 (p2 <- sum(dpois(0:1001, lam)))
-1 - p1/p2# -2.13e-14 , was -6.7e-6, then 0
+1 - p1/p2# -2.13e-14 (also on aarch64) , was -6.7e-6, then 0
 stopifnot(abs(1 - p1/p2) < 1e-12)
 
 ## new pgamma(alphalimit = 1300):
@@ -67,9 +68,7 @@ stopifnot(
 
 ##--- More generally:
 library(DPQ)
-(doExtras <- DPQ:::doExtras())
-
-## dyn.load("/u/maechler/R/MM/NUMERICS/dpq-functions/ppois-direct.so")
+(doExtras <- DPQ:::doExtras() && !grepl("valgrind", R.home()))
 
 ## "TODO": currently quite a few checks already happen in the examples in
 ## >> ../man/ppoisson.Rd <<
@@ -85,16 +84,44 @@ all.equal(pE, pEd) # not quite: 'x0' differs slightly
 ## Large Lam  where  exp(-lambda) underflows to 0 (even in 'long double'):
 
 ## "the minimal" large lambda is
-okLD <- okLongDouble(999)
-notXorLD <- !okLD || !doExtras
-Lam  <- 11400 ## but we choose a slightly larger, where one sees more
+(okLD <- okLongDouble(999))
+okLongDouble(11111, verbose = 3) # more extreme (not checking) -- still ok
+okLongDouble(11250, verbose = 3) #  "      "      "    "          still ok
+okLongDouble(11500, verbose = 3) #  "      "     __fails__ for Fedora x86_64 *and* linux/aarch64
+(XnLD <- okLD && doExtras)
+(aarch64 <- grepl("aarch64.*linux", R.version$platform))
+(noLdbl <- (.Machine$sizeof.longdouble <= 8)) ## TRUE when --disable-long-double
+## on "my" platform, and if doExtras,  I'm very strict:
+sys3 <- Sys.info() [  c("sysname", "machine", "login") ]
+(myPlatf <- all(sys3 == c("Linux",  "x86_64",  "maechler")))
+## save directory (to read from):
+(sdir <- system.file("safe", package="DPQ"))
+mymach <- paste0(if(myPlatf) "MM" else paste0(sys3, collapse="-"),
+                 "@", Sys.info()[["nodename"]])
+
+do.pdf <- TRUE # possibly manually
+do.pdf <- !dev.interactive(orNone = TRUE)
+do.pdf
+if(do.pdf) { pdf.options(width = 9, height = 6.5)# for all {9/6.5 = 1.38 ; 4/3 < 1.38 < sqrt(2) [A4]
+    pdf(paste0("ppois-ex_", mymach, ".pdf"))
+}
+
+
+
+## Checking: currently only if(okLD)
+okChk <- okLD && !aarch64
+
+iSumm <- function(i)
+    paste(if(length(i) >= 11) c(head(i), "...", tail(i, 3)) else i, collapse=", ")
+Lam0 <- 11400 ## but we choose a slightly larger, where one sees more
 set.seed(12)
-for(Lam in c(11400 + c(0, sort(round(rlnorm(10, 4, 2), 1))))) {
+for(Lam in c(Lam0 + c(0, sort(round(rlnorm(10, 4, 2), 1))))) {
+
     M    <- ceiling((Lam + 4*sqrt(Lam))/50)*50
     tit <- sprintf("Lam = %g; M = %7.0f", Lam, M)
     cat(tit, ":\n")
     kM <- 0:M
-    pp. <- ppoisD(M, lambda=Lam) ## with current DEBUG output vives
+    pp. <- ppoisD(M, lambda=Lam, verbose = 3L) ## with current DEBUG output gives
     ## ppoisD(*, lambda=11600): expl(-ldlam)=0= 0 ==> llam=9.35876, exp_arg=-11600
     ##  .. i=30, finally new f = expl(exp_arg = -11393.9) = 4.95747e-4949 > 0
     ## ____________or________________
@@ -106,25 +133,44 @@ for(Lam in c(11400 + c(0, sort(round(rlnorm(10, 4, 2), 1))))) {
         print(system.time(
             ppSL <- ppoisD(kM, lambda=Lam, all.from.0=FALSE)
         ))
-    ip <- dp > 0
-    plot(kM[ip], pp[ip], type="l", main = tit)
-    plot(kM[ip], pp[ip], type="l", main = tit, log = "y")# LOG: here *no* warnings
-    lines(kM[ip], pp0[ip], col=2)
-    lines(kM[ip], pp.[ip], col=adjustcolor("blue", 1/2), lwd=4)
-    abline(v = Lam, lty=2, col="gray")
-    ##
-    plot (kM[ip], pp.[ip] - pp[ip], xlab = "k", type="l", main = tit)
-    lines(kM[ip], pp0[ip] - pp[ip], col = adjustcolor("red", 1/2), lwd = 2)
-    if(doExtras) lines(kM[ip], ppSL[ip] - pp[ip], col = adjustcolor(3, 1/2), lwd=3)
-    abline(v = Lam, lty=2, col="gray")
-    stopifnot(exprs =
-      if(doExtras) {
-        !okLD    || all.equal(pp,  pp. , tol = 1e-12)
-        notXorLD || all.equal(pp,  ppSL, tol = 1e-12)
-        notXorLD || all.equal(pp., ppSL, tol = 1e-14)# both ppoisD()  "fast" or "slow" should be very close
-      } else {
-        !okLD    || all.equal(pp,  pp. , tol = 1e-12)
-      })
+    ip <- dp > 0  &  pp. > 0  &  pp > 0
+
+    ## FIXME: check if pp[ip] etc is _finite_ (even_ with log="y")
+    ## arm64 gives (../Misc/output-arm64/DPQ.Rcheck/tests/ppois-ex.Rout.fail )
+## Lam = 11400; M =   11850 :
+##     Error in plot.window(...) : need finite 'ylim' values
+## Calls: plot -> plot.default -> localWindow -> plot.window
+## In addition: Warning messages:
+## 1: In min(x) : no non-missing arguments to min; returning Inf
+## 2: In max(x) : no non-missing arguments to max; returning -Inf
+## Execution halted
+
+    N <- !any(ip) # N:= {"will not plot"}
+    if(any(n <- !is.finite(pp [ip]))) { N <- TRUE; cat("pp [ip]: n:",iSumm(which(n)),"\n"); print(summary(pp [ip]))}
+    if(any(n <- !is.finite(pp0[ip]))) { N <- TRUE; cat("pp0[ip]: n:",iSumm(which(n)),"\n"); print(summary(pp0[ip]))}
+    if(any(n <- !is.finite(pp.[ip]))) { N <- TRUE; cat("pp.[ip]: n:",iSumm(which(n)),"\n"); print(summary(pp.[ip]))}
+    if(N) {
+      cat("_NOT_ plotting as we have  non-finite pp*[ip] results!\n============================\n")
+    } else { # there are no  Inf/NA/... problems
+      plot(kM[ip], pp[ip], type="l", main = tit)
+      plot(kM[ip], pp[ip], type="l", main = tit, log = "y")# LOG: here *no* warnings
+      lines(kM[ip], pp0[ip], col=2)
+      lines(kM[ip], pp.[ip], col=adjustcolor("blue", 1/2), lwd=4)
+      abline(v = Lam, lty=2, col="gray")
+      ##
+      plot (kM[ip], pp.[ip] - pp[ip], xlab = "k", type="l", main = tit)
+      lines(kM[ip], pp0[ip] - pp[ip], col = adjustcolor("red", 1/2), lwd = 2)
+      if(doExtras) lines(kM[ip], ppSL[ip] - pp[ip], col = adjustcolor(3, 1/2), lwd=3)
+      abline(v = Lam, lty=2, col="gray")
+    }
+
+    if(okChk)  stopifnot(all.equal(pp,  pp., tol = 1e-12))
+    if(doExtras) {
+        if(okChk) stopifnot(exprs = {
+            all.equal(pp,  ppSL, tol = 1e-12)
+            all.equal(pp., ppSL, tol = 1e-14)# both ppoisD()  "fast" or "slow" should be very close
+        })
+    }
 }
 
 

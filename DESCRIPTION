@@ -1,9 +1,9 @@
 Package: DPQ
 Title: Density, Probability, Quantile ('DPQ') Computations
-Version: 0.6-1
-Date: 2025-10-13
-VersionNote: Last CRAN: 0.6-0 on 2025-07-08; 0.5-9 on 2024-08-23; 0.5-8
-        on 2023-11-30
+Version: 0.6-2
+Date: 2026-09-04
+VersionNote: Last CRAN: 0.6-1 on 2025-10-13; 0.6-0 on 2025-07-08; 0.5-9
+        on 2024-08-23
 Authors@R: c(person("Martin","Maechler", role=c("aut","cre"),
                     email="maechler@stat.math.ethz.ch", comment = c(ORCID = "0000-0002-8685-9910"))
   , person("Morten",   "Welinder",    role = "ctb", comment = "pgamma C code, see PR#7307, Jan. 2005; further pdhyper()")
@@ -40,7 +40,7 @@ URL: https://specfun.r-forge.r-project.org/,
         svn://svn.r-forge.r-project.org/svnroot/specfun/pkg/DPQ
 BugReports: https://r-forge.r-project.org/tracker/?atid=2462&group_id=611
 NeedsCompilation: yes
-Packaged: 2025-10-13 15:11:47 UTC; maechler
+Packaged: 2026-09-04 14:38:50 UTC; maechler
 Author: Martin Maechler [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-8685-9910>),
   Morten Welinder [ctb] (pgamma C code, see PR#7307, Jan. 2005; further
@@ -52,4 +52,4 @@ Author: Martin Maechler [aut, cre] (ORCID:
   R Foundation [cph] (src/qchisq-appr.c)
 Maintainer: Martin Maechler <maechler@stat.math.ethz.ch>
 Repository: CRAN
-Date/Publication: 2025-10-13 16:20:12 UTC
+Date/Publication: 2026-09-06 11:00:10 UTC
